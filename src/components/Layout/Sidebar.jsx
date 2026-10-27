@@ -7,18 +7,25 @@ import {
     Calendar, FileText, UserCheck, ClipboardList, DollarSign,
     Award, Home, Map, Info, Download, Trophy, Laptop, Ticket, Bell,
     X, FileCheck, Megaphone, CalendarDays, ToggleRight,
-     Shield,Power
+    Shield, Power, AlertCircle, LayoutTemplate, Lock, Image
 } from 'lucide-react';
 
 const menuConfig = {
     superadmin: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/superadmin/dashboard' },
         { icon: Building2, label: 'Departments', path: '/superadmin/departments' },
+        { icon: BookOpen, label: 'Academics', path: '/superadmin/academics/programs' },
         { icon: Users, label: 'All Users', path: '/superadmin/users' },
         { icon: BookOpen, label: 'Courses', path: '/superadmin/courses' },
         { icon: Megaphone, label: 'Announcements', path: '/superadmin/announcements' },
-        { icon: Settings, label: 'Settings', path: '/superadmin/settings' },
-
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/superadmin/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/superadmin/settings/profile' },
+            ]
+        },
     ],
     systemadmin: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/systemadmin/dashboard' },
@@ -31,17 +38,27 @@ const menuConfig = {
                 { icon: Shield, label: 'Admins', path: '/systemadmin/users/admins' },
             ]
         },
-        // 👇 New Registration Dropdown 👇
+        { icon: BookOpen, label: 'Courses', path: '/systemadmin/courses' },
         {
             icon: ToggleRight,
             label: 'Registration',
             children: [
                 { icon: Power, label: 'Manage Registration', path: '/systemadmin/registration/manage' },
                 { icon: GraduationCap, label: '1st Sem Auto-Assign', path: '/systemadmin/registration/first-semester' },
+                { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
+            ]
+        },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/systemadmin/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/systemadmin/settings/profile' },
             ]
         },
     ],
-    admin: [
+    // 👇 EDUCATION DEPARTMENTS (CS, IT, SE)
+    department_admin: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
         {
             icon: Users,
@@ -67,13 +84,76 @@ const menuConfig = {
                 { icon: Megaphone, label: 'Announcements', path: '/admin/announcements' },
             ],
         },
-        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/admin/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/admin/settings/profile' },
+            ]
+        },
+    ],
+    // 👇 BUSINESS DEPARTMENTS (Admissions, Finance, Examination)
+    admissions: [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/admissions/dashboard' },
+        { icon: Users, label: 'Students', path: '/admissions/students' },
+        { icon: BookOpen, label: 'Teachers', path: '/admissions/teachers' },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/admissions/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/admissions/settings/profile' },
+            ]
+        },
+    ],
+    finance: [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/finance/dashboard' },
+        { icon: DollarSign, label: 'Fee Management', path: '/finance/fees' },
+        { icon: FileText, label: 'Fee Rates', path: '/finance/rates' },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/finance/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/finance/settings/profile' },
+            ]
+        },
+    ],
+    examination: [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/examination/dashboard' },
+        { icon: CalendarDays, label: 'Exam Timetable', path: '/examination/timetable' },
+        { icon: FileCheck, label: 'Check Results', path: '/examination/results/publish' },
+        {
+            icon: FileText,
+            label: 'Transcripts',
+            children: [
+                { icon: FileText, label: 'Manage Student Transcripts', path: '/examination/transcripts' },
+                { icon: LayoutTemplate, label: 'Transcript Design', path: '/examination/transcripts/design' },
+            ]
+        },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/examination/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/examination/settings/profile' },
+            ]
+        },
     ],
     teacher: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/teacher/dashboard' },
         { icon: BookOpen, label: 'My Classes', path: '/teacher/classes' },
         { icon: UserCheck, label: 'Attendance', path: '/teacher/attendance' },
         { icon: ClipboardList, label: 'Assessment', path: '/teacher/assessments' },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/teacher/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/teacher/settings/profile' },
+            ]
+        },
     ],
     student: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/student/dashboard' },
@@ -110,6 +190,7 @@ const menuConfig = {
                 { icon: FileCheck, label: 'Assessment Result', path: '/student/assessment-result' },
                 { icon: Trophy, label: 'Results', path: '/student/results' },
                 { icon: Laptop, label: 'Online Exam', path: '/student/online-exam' },
+                { icon: FileText, label: 'Transcript', path: '/student/transcript' },
             ],
         },
         {
@@ -119,36 +200,24 @@ const menuConfig = {
                 { icon: Download, label: 'Download Voucher', path: '/student/fee-voucher' },
             ],
         },
+        {
+            icon: Settings,
+            label: 'Settings',
+            children: [
+                { icon: Lock, label: 'Change Password', path: '/student/settings/password' },
+                { icon: Image, label: 'Profile Image', path: '/student/settings/profile' },
+            ]
+        },
     ],
-    examination: [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/examination/dashboard' },
-        { icon: CalendarDays, label: 'Exam Timetable', path: '/examination/timetable' },
-        { icon: FileCheck, label: 'Check Results', path: '/examination/results' },
-        { icon: FileText, label: 'Transcripts', path: '/examination/transcripts' },
-    ],
-};
-
-const roleLabels = {
-    superadmin: 'Super Admin',
-    admin: 'Department Admin',
-    teacher: 'Teacher',
-    student: 'Student',
 };
 
 const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
     const location = useLocation();
-
-    // Check if the current URL matches any of the children's paths
     const isChildActive = item.children.some(child => location.pathname === child.path);
-
-    // Set the initial state to true if a child is active
     const [open, setOpen] = useState(isChildActive);
 
-    // If the user navigates to a child page via another link (e.g. Dashboard button), ensure the group opens
     useEffect(() => {
-        if (isChildActive) {
-            setOpen(true);
-        }
+        if (isChildActive) setOpen(true);
     }, [isChildActive]);
 
     const Icon = item.icon;
@@ -171,11 +240,7 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
                     <Icon className="w-5 h-5 shrink-0" />
                     <span>{item.label}</span>
                 </span>
-
-                {/* 👇 Arrow fix: Default right (-rotate-90), rotates to down (rotate-0) when open 👇 */}
-                <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}
-                />
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`} />
             </button>
 
             {open && (
@@ -188,10 +253,7 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
                                 to={child.path}
                                 onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-colors ${isActive
-                                        ? 'bg-blue-50 text-blue-600 font-semibold'
-                                        : 'text-slate-500 hover:bg-gray-50 hover:text-blue-600'
-                                    }`
+                                    `flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-slate-500 hover:bg-gray-50 hover:text-blue-600'}`
                                 }
                             >
                                 <ChildIcon className="w-3.5 h-3.5 shrink-0" />
@@ -208,7 +270,20 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const menuItems = menuConfig[user?.role] || [];
+
+    // 👇 SMART MENU SELECTION LOGIC 👇
+    let menuKey = user?.role;
+
+    if (user?.role === 'department_admin') {
+        const deptCode = user.departmentCode || user.department?.code;
+
+        if (deptCode === 'ADM') menuKey = 'admissions';
+        else if (deptCode === 'FIN') menuKey = 'finance';
+        else if (deptCode === 'EXM') menuKey = 'examination';
+        else menuKey = 'department_admin'; // Fallback for CS, IT, SE
+    }
+
+    const menuItems = menuConfig[menuKey] || [];
 
     const handleLogout = () => {
         logout();
@@ -219,11 +294,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         <aside
             className={`
                 bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 z-50
-                /* Desktop Styling */
                 md:sticky md:top-0 md:translate-x-0
                 ${isCollapsed ? 'md:w-20' : 'md:w-64'}
-                
-                /* Mobile Styling (Drawer) */
                 fixed inset-y-0 left-0 w-64 shadow-2xl
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
@@ -243,7 +315,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                     )}
                 </div>
 
-                {/* Mobile Close Button */}
                 <button
                     onClick={() => setIsMobileOpen(false)}
                     className="md:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"

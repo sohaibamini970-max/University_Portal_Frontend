@@ -1,35 +1,45 @@
-import React, { useState } from 'react';
-import { GraduationCap, Users, Eye, Edit2, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { GraduationCap, Eye, Edit2, Trash2, X, MapPin } from 'lucide-react';
+import { api } from '../../../context/AuthContext';
+import DepartmentEditModal from '../../../components/common/DepartmentEditModal';
 
 const EducationDepartments = () => {
+    const { searchQuery } = useOutletContext();
+    const [departments, setDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState(null);
+    const [editingDept, setEditingDept] = useState(null); 
+    const [loading, setLoading] = useState(true);
 
-    const departments = [
-        {
-            id: 1, name: 'Computer Science', code: 'CS',
-            admin: 'Dr. Smith', head: 'Dr. A. K. Khan', chairman: 'Dr. Zubair Ahmed',
-            students: 450, teachers: 25, staff: 10, courses: 12,
-            established: '2010', color: 'blue', icon: GraduationCap,
-            email: 'cs.dept@university.edu',
-            desc: 'Department of Computer Science offering BS, MS, and PhD programs.'
-        },
-        {
-            id: 2, name: 'Information Technology', code: 'IT',
-            admin: 'Dr. Johnson', head: 'Dr. S. Ali', chairman: 'Dr. Zubair Ahmed',
-            students: 380, teachers: 20, staff: 8, courses: 10,
-            established: '2012', color: 'indigo', icon: GraduationCap,
-            email: 'it.dept@university.edu',
-            desc: 'Focused on networking, cybersecurity, and IT infrastructure.'
-        },
-        {
-            id: 3, name: 'Software Engineering', code: 'SE',
-            admin: 'Dr. Williams', head: 'Dr. M. Hassan', chairman: 'Dr. Zubair Ahmed',
-            students: 520, teachers: 30, staff: 12, courses: 15,
-            established: '2015', color: 'purple', icon: GraduationCap,
-            email: 'se.dept@university.edu',
-            desc: 'Specializing in software development lifecycle and agile methodologies.'
-        },
-    ];
+    const fetchDepartments = async () => {
+        try {
+            const response = await api.get('/departments?type=education');
+            setDepartments(response.data);
+        } catch (error) {
+            console.error("Failed to load departments", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this department?")) return;
+        try {
+            await api.delete(`/departments/${id}`);
+            setDepartments(prev => prev.filter(d => d.id !== id));
+        } catch (error) {
+            alert("Failed to delete department.");
+        }
+    };
+
+    const filteredData = departments.filter(d =>
+        d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.code.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const getColorClasses = (color) => {
         const colors = {
@@ -40,11 +50,18 @@ const EducationDepartments = () => {
         return colors[color] || colors.blue;
     };
 
+    if (loading) return <div className="text-center py-10 text-gray-500">Loading educational departments...</div>;
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {departments.map((dept) => {
-                const colors = getColorClasses(dept.color);
-                const Icon = dept.icon;
+            {filteredData.length === 0 && (
+                <div className="col-span-full py-10 text-center text-gray-500">No educational departments found.</div>
+            )}
+
+            {filteredData.map((dept) => {
+                const colorKey = dept.id % 2 === 0 ? 'indigo' : 'blue';
+                const colors = getColorClasses(colorKey);
+                const Icon = GraduationCap;
 
                 return (
                     <div key={dept.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col">
@@ -61,32 +78,32 @@ const EducationDepartments = () => {
                                     </div>
                                 </div>
 
-                                {/* 👇 Actions are now always visible 👇 */}
                                 <div className="flex gap-1">
                                     <button onClick={() => setSelectedDept(dept)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="View">
                                         <Eye className="w-4 h-4" />
                                     </button>
-                                    <button className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Edit">
+                                    <button onClick={() => setEditingDept(dept)} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Edit">
                                         <Edit2 className="w-4 h-4" />
                                     </button>
-                                    <button className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                                    <button onClick={() => handleDelete(dept.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
-                            <div className="mb-4 text-sm text-gray-600">
-                                <span className="font-medium text-gray-400 text-[10px] uppercase tracking-wider block mb-0.5">Department Admin</span>
-                                {dept.admin}
-                            </div>
-                            <p className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{dept.desc}</p>
+
+                            <p className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{dept.description || 'No description provided.'}</p>
+
                             <div className="mt-auto pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Students</p>
-                                    <p className="text-sm font-bold text-gray-800">{dept.students}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Block</p>
+                                    <p className="text-sm font-bold text-gray-800 flex items-center gap-1">
+                                        <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                                        {dept.building || dept.location || 'N/A'}
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Teachers</p>
-                                    <p className="text-sm font-bold text-gray-800">{dept.teachers}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase">Email</p>
+                                    <p className="text-sm font-bold text-gray-800 truncate">{dept.email || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
@@ -94,28 +111,22 @@ const EducationDepartments = () => {
                 );
             })}
 
-            {/* Modal for Educational Departments */}
+            {/* View Modal */}
             {selectedDept && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95">
-                        <div className={`p-6 text-white bg-gradient-to-r ${getColorClasses(selectedDept.color).gradient}`}>
+                        <div className={`p-6 text-white bg-gradient-to-r from-blue-500 to-indigo-600`}>
                             <button onClick={() => setSelectedDept(null)} className="absolute top-4 right-4 p-1.5 bg-white/20 hover:bg-white/30 rounded-full"><X className="w-5 h-5" /></button>
                             <h2 className="text-2xl font-bold">{selectedDept.name}</h2>
                             <p className="text-white/80">Code: {selectedDept.code}</p>
                         </div>
                         <div className="p-6 space-y-6">
-                            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedDept.desc}</p>
+                            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedDept.description}</p>
                             <div className="grid grid-cols-2 gap-4">
-                                <div><p className="text-xs text-gray-400 uppercase">Chairman</p><p className="text-sm font-bold">{selectedDept.chairman}</p></div>
-                                <div><p className="text-xs text-gray-400 uppercase">Head</p><p className="text-sm font-bold">{selectedDept.head}</p></div>
-                                <div><p className="text-xs text-gray-400 uppercase">Admin</p><p className="text-sm font-bold">{selectedDept.admin}</p></div>
                                 <div><p className="text-xs text-gray-400 uppercase">Email</p><p className="text-sm font-bold">{selectedDept.email}</p></div>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                                <div className="bg-gray-50 p-2 text-center rounded-lg"><p className="text-lg font-bold">{selectedDept.courses}</p><p className="text-[10px] text-gray-500">Courses</p></div>
-                                <div className="bg-gray-50 p-2 text-center rounded-lg"><p className="text-lg font-bold">{selectedDept.students}</p><p className="text-[10px] text-gray-500">Students</p></div>
-                                <div className="bg-gray-50 p-2 text-center rounded-lg"><p className="text-lg font-bold">{selectedDept.teachers}</p><p className="text-[10px] text-gray-500">Teachers</p></div>
-                                <div className="bg-gray-50 p-2 text-center rounded-lg"><p className="text-lg font-bold">{selectedDept.staff}</p><p className="text-[10px] text-gray-500">Staff</p></div>
+                                <div><p className="text-xs text-gray-400 uppercase">Location</p><p className="text-sm font-bold">{selectedDept.location}</p></div>
+                                <div><p className="text-xs text-gray-400 uppercase">Block / Building</p><p className="text-sm font-bold">{selectedDept.building || 'N/A'}</p></div>
+                                <div><p className="text-xs text-gray-400 uppercase">Established</p><p className="text-sm font-bold">{selectedDept.establishedYear || 'N/A'}</p></div>
                             </div>
                         </div>
                         <div className="p-4 bg-gray-50 text-right">
@@ -123,6 +134,14 @@ const EducationDepartments = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {editingDept && (
+                <DepartmentEditModal
+                    department={editingDept}
+                    onClose={() => setEditingDept(null)}
+                    onSaved={fetchDepartments}
+                />
             )}
         </div>
     );

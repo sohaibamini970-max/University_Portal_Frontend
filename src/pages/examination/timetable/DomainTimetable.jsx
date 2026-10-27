@@ -1,42 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DataTable from '../../../components/common/DataTable';
-import { Search, Plus, CalendarDays, X, CheckCircle, ArrowLeft, Clock, MapPin } from 'lucide-react';
+import {
+    Search, CalendarDays, CheckCircle, ArrowLeft,
+    Clock, MapPin, Filter, Users, Edit2, Save, UserCheck, Building2
+} from 'lucide-react';
 
 const DomainTimetable = () => {
     const { domainId } = useParams();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
-    const [showModal, setShowModal] = useState(false);
+    const [selectedSemester, setSelectedSemester] = useState('3rd');
+    const [selectedBatch, setSelectedBatch] = useState('2023-2027');
+    const [showSaveModal, setShowSaveModal] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // Format the domain ID for display
+    // Editing state for inline table edit
+    const [editingCell, setEditingCell] = useState(null); // { courseCode, field }
+    const [editValue, setEditValue] = useState('');
+
     const domainNames = { cs: 'Computer Science', it: 'Information Technology', se: 'Software Engineering', ai: 'Artificial Intelligence' };
     const currentDomainName = domainNames[domainId] || 'Unknown Domain';
 
-    // Master Mock Data (Filtered by Domain)
-    const allExams = [
-        { id: 1, domain: 'cs', course: 'Data Structures', code: 'CS-301', date: 'Dec 10, 2025', time: '09:00 AM', duration: '3 Hours', room: 'Hall A', invigilator: 'Dr. Smith' },
-        { id: 2, domain: 'cs', course: 'Web Development', code: 'CS-302', date: 'Dec 12, 2025', time: '09:00 AM', duration: '3 Hours', room: 'Hall B', invigilator: 'Sarah Wilson' },
-        { id: 3, domain: 'it', course: 'Networking', code: 'IT-401', date: 'Dec 14, 2025', time: '02:00 PM', duration: '2 Hours', room: 'Hall A', invigilator: 'Mike Chen' },
-        { id: 4, domain: 'se', course: 'Software Architecture', code: 'SE-501', date: 'Dec 16, 2025', time: '09:00 AM', duration: '3 Hours', room: 'Hall C', invigilator: 'Dr. Ali' },
+    // Available Batches per Semester
+    const semesterBatches = {
+        '1st': ['2025-2029'],
+        '2nd': ['2024-2028'],
+        '3rd': ['2023-2027', '2022-2026'],
+        '4th': ['2022-2026'],
+        '5th': ['2021-2025'],
+        '6th': ['2021-2025'],
+        '7th': ['2020-2024'],
+        '8th': ['2020-2024'],
+    };
+    const currentBatches = semesterBatches[selectedSemester] || [];
+
+    // Dropdown Options
+    const departmentLocations = ['Main Campus', 'City Campus', 'North Campus'];
+    const examHalls = ['Hall A', 'Hall B', 'Hall C', 'Lab 1', 'Lab 2'];
+    const availableTeachers = ['Dr. Smith', 'Sarah Wilson', 'Mike Chen', 'Dr. Ali', 'David Lee'];
+
+    // Master Mock Data of Courses
+    const allCourses = [
+        { domain: 'cs', semester: '3rd', course: 'Data Structures', code: 'CS-301' },
+        { domain: 'cs', semester: '3rd', course: 'Algorithms', code: 'CS-303' },
+        { domain: 'cs', semester: '3rd', course: 'Web Development', code: 'CS-302' },
+        { domain: 'cs', semester: '5th', course: 'Operating Systems', code: 'CS-401' },
+        { domain: 'it', semester: '4th', course: 'Networking', code: 'IT-401' },
+        { domain: 'se', semester: '5th', course: 'Software Architecture', code: 'SE-501' },
     ];
 
-    // Filter by current domain AND search query
-    const domainExams = allExams.filter(e => e.domain === domainId);
-    const filteredData = domainExams.filter(e =>
+    // State to hold the timetable data
+    const [timetable, setTimetable] = useState([]);
+
+    // When dropdowns change, reset the timetable with the required courses
+    useEffect(() => {
+        // Filter courses based on selected domain and semester
+        const requiredCourses = allCourses.filter(
+            c => c.domain === domainId && c.semester === selectedSemester
+        );
+
+        // Map them into exam records (empty dates initially)
+        const initialTimetable = requiredCourses.map(course => ({
+            id: course.code, // unique identifier for the row
+            ...course,
+            batch: selectedBatch,
+            date: '',
+            time: '',
+            duration: '3 Hours',
+            location: '',
+            hall: '',
+            invigilator: ''
+        }));
+
+        setTimetable(initialTimetable);
+    }, [domainId, selectedSemester, selectedBatch]);
+
+    // Filter data for search
+    const filteredData = timetable.filter(e =>
         e.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.code.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Available courses for the dropdown in the modal
-    const availableCourses = {
-        cs: ['CS-301: Data Structures', 'CS-302: Web Development', 'CS-303: Algorithms'],
-        it: ['IT-401: Networking', 'IT-402: Cybersecurity'],
-        se: ['SE-501: Software Architecture', 'SE-502: Agile Development'],
-        ai: ['AI-601: Machine Learning', 'AI-602: Neural Networks']
+    // Handle Inline Edit (Dates)
+    const startEdit = (id, field, currentValue) => {
+        setEditingCell({ id, field });
+        setEditValue(currentValue);
     };
-    const currentCourses = availableCourses[domainId] || [];
+
+    const saveInlineEdit = (id) => {
+        setTimetable(prev => prev.map(exam =>
+            exam.id === id ? { ...exam, [editingCell.field]: editValue } : exam
+        ));
+        setEditingCell(null);
+    };
+
+    // Handle Dropdown Updates
+    const handleDropdownChange = (id, field, value) => {
+        setTimetable(prev => prev.map(exam =>
+            exam.id === id ? { ...exam, [field]: value } : exam
+        ));
+    };
 
     const columns = [
         {
@@ -51,122 +115,232 @@ const DomainTimetable = () => {
         },
         {
             key: 'date',
-            label: 'Date & Time',
+            label: 'Date & Time (Click to edit)',
             render: (row) => (
-                <div className="text-sm">
-                    <p className="font-medium text-gray-800 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-gray-400" /> {row.date}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1"><Clock className="w-3.5 h-3.5 text-gray-400" /> {row.time} ({row.duration})</p>
+                <div className="text-sm space-y-1">
+                    {/* Inline Date Edit */}
+                    {editingCell?.id === row.id && editingCell?.field === 'date' ? (
+                        <input
+                            type="date"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => saveInlineEdit(row.id)}
+                            autoFocus
+                            className="px-2 py-1 border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none w-full"
+                        />
+                    ) : (
+                        <p
+                            onClick={() => startEdit(row.id, 'date', row.date)}
+                            className="font-medium text-gray-800 flex items-center gap-1.5 cursor-pointer hover:bg-gray-100 p-1 -ml-1 rounded transition-colors group"
+                        >
+                            <CalendarDays className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500" />
+                            {row.date || 'Set Date'}
+                            <Edit2 className="w-3 h-3 text-transparent group-hover:text-indigo-400 ml-auto" />
+                        </p>
+                    )}
+
+                    {/* Inline Time Edit */}
+                    {editingCell?.id === row.id && editingCell?.field === 'time' ? (
+                        <input
+                            type="time"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => saveInlineEdit(row.id)}
+                            autoFocus
+                            className="px-2 py-1 border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none w-full"
+                        />
+                    ) : (
+                        <p
+                            onClick={() => startEdit(row.id, 'time', row.time)}
+                            className="text-xs text-gray-500 flex items-center gap-1.5 cursor-pointer hover:bg-gray-100 p-1 -ml-1 rounded transition-colors group"
+                        >
+                            <Clock className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500" />
+                            {row.time || 'Set Time'} ({row.duration})
+                            <Edit2 className="w-3 h-3 text-transparent group-hover:text-indigo-400 ml-auto" />
+                        </p>
+                    )}
                 </div>
             )
         },
         {
-            key: 'room',
-            label: 'Exam Hall',
+            key: 'location',
+            label: 'Dept. Location',
             render: (row) => (
-                <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                    <MapPin className="w-4 h-4 text-gray-400" /> {row.room}
+                <div className="flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+                    <select
+                        value={row.location}
+                        onChange={(e) => handleDropdownChange(row.id, 'location', e.target.value)}
+                        className="w-full max-w-[140px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                    >
+                        <option value="">Select Location</option>
+                        {departmentLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                    </select>
                 </div>
             )
         },
-        { key: 'invigilator', label: 'Invigilator' },
+        {
+            key: 'hall',
+            label: 'Exam Hall',
+            render: (row) => (
+                <div className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                    <select
+                        value={row.hall}
+                        onChange={(e) => handleDropdownChange(row.id, 'hall', e.target.value)}
+                        className="w-full max-w-[120px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                    >
+                        <option value="">Select Hall</option>
+                        {examHalls.map(hall => <option key={hall} value={hall}>{hall}</option>)}
+                    </select>
+                </div>
+            )
+        },
+        {
+            key: 'invigilator',
+            label: 'Invigilator',
+            render: (row) => (
+                <div className="flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-gray-400 shrink-0" />
+                    <select
+                        value={row.invigilator}
+                        onChange={(e) => handleDropdownChange(row.id, 'invigilator', e.target.value)}
+                        className="w-full max-w-[150px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                    >
+                        <option value="">Select Teacher</option>
+                        {availableTeachers.map(teacher => <option key={teacher} value={teacher}>{teacher}</option>)}
+                    </select>
+                </div>
+            )
+        },
     ];
 
-    const handleSave = (e) => {
-        e.preventDefault();
+    const handleSaveTimetable = () => {
+        // Here you would send the `timetable` array to your backend API
         setShowSuccess(true);
         setTimeout(() => {
             setShowSuccess(false);
-            setShowModal(false);
-        }, 1500);
+            setShowSaveModal(false);
+        }, 2000);
     };
 
     return (
         <div className="space-y-5">
-            {/* Header with Back Button */}
+            {/* Header */}
             <div className="flex items-center gap-4 mb-2">
-                <button
-                    onClick={() => navigate('/examination/timetable')}
-                    className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                >
+                <button onClick={() => navigate('/examination/timetable')} className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">{currentDomainName} Exams</h2>
-                    <p className="text-sm text-gray-500">Manage and schedule exams for the {currentDomainName} domain.</p>
+                    <p className="text-sm text-gray-500">Pre-loaded courses. Fill in the dates, halls, and invigilators.</p>
                 </div>
             </div>
 
             {/* Control Bar */}
-            <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:w-80 p-2">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search exams in this domain..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
+            <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-200 flex flex-col lg:flex-row items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    {/* Search */}
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text" placeholder="Search exams..."
+                            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                    </div>
+
+                    {/* Semester Filter */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-100">
+                        <Filter className="w-4 h-4 text-indigo-600" />
+                        <select
+                            value={selectedSemester}
+                            onChange={(e) => {
+                                setSelectedSemester(e.target.value);
+                                setSelectedBatch(semesterBatches[e.target.value][0] || '');
+                            }}
+                            className="bg-transparent text-sm font-bold text-indigo-800 focus:outline-none cursor-pointer w-full"
+                        >
+                            {['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'].map(sem => (
+                                <option key={sem} value={sem}>{sem} Semester</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Batch Filter */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        <select
+                            value={selectedBatch}
+                            onChange={(e) => setSelectedBatch(e.target.value)}
+                            className="bg-transparent text-sm font-bold text-emerald-800 focus:outline-none cursor-pointer w-full"
+                        >
+                            {currentBatches.map(batch => (
+                                <option key={batch} value={batch}>Batch {batch}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md transition-colors"
-                >
-                    <Plus className="w-4 h-4" /> Schedule Exam
-                </button>
+
+                <div className="flex items-center gap-3 w-full lg:w-auto">
+                    <button
+                        onClick={() => setShowSaveModal(true)}
+                        className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md transition-colors"
+                    >
+                        <Save className="w-4 h-4" /> Save Timetable
+                    </button>
+                </div>
             </div>
 
-            <DataTable columns={columns} data={filteredData} itemsPerPage={5} />
+            <DataTable columns={columns} data={filteredData} itemsPerPage={10} />
 
-            {/* SCHEDULE EXAM MODAL */}
-            {showModal && (
+            {/* ================= SAVE TIMETABLE CONFIRMATION MODAL ================= */}
+            {showSaveModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="bg-slate-800 p-5 text-white flex justify-between items-center">
-                            <div>
-                                <h2 className="text-lg font-bold">Schedule Exam</h2>
-                                <p className="text-slate-300 text-xs mt-0.5">{currentDomainName}</p>
-                            </div>
-                            <button onClick={() => setShowModal(false)} className="p-1.5 bg-white/20 hover:bg-white/30 rounded-full"><X className="w-5 h-5" /></button>
-                        </div>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 text-center">
 
                         {showSuccess ? (
-                            <div className="p-8 text-center animate-in zoom-in-95">
-                                <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                                <h3 className="text-lg font-bold">Exam Scheduled!</h3>
-                                <p className="text-sm text-gray-500 mt-1">The exam has been added to the timetable.</p>
+                            <div className="p-8 animate-in zoom-in-95">
+                                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle className="w-10 h-10 text-emerald-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Timetable Saved!</h2>
+                                <p className="text-sm text-gray-500">The exam schedule has been published successfully.</p>
                             </div>
                         ) : (
-                            <form onSubmit={handleSave} className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Select Course</label>
-                                    <select className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                        {currentCourses.map(c => <option key={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                                        <input type="date" className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm" required />
+                            <>
+                                <div className="bg-indigo-600 p-6 text-white">
+                                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        <Save className="w-8 h-8" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Time</label>
-                                        <input type="time" className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm" required />
+                                    <h2 className="text-xl font-bold">Confirm & Save Timetable</h2>
+                                    <p className="text-indigo-100 text-sm mt-1">You are about to publish the exam schedule.</p>
+                                </div>
+                                <div className="p-6">
+                                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-500">Domain</span>
+                                            <span className="font-bold text-gray-800">{currentDomainName}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-500">Semester</span>
+                                            <span className="font-bold text-gray-800">{selectedSemester} Semester</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-500">Batch</span>
+                                            <span className="font-bold text-gray-800">{selectedBatch}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
+                                            <span className="text-sm text-gray-500">Total Exams</span>
+                                            <span className="font-bold text-indigo-700 text-lg">{filteredData.length}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setShowSaveModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancel</button>
+                                        <button onClick={handleSaveTimetable} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md">Confirm Save</button>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Exam Hall</label>
-                                    <select className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm">
-                                        <option>Hall A</option>
-                                        <option>Hall B</option>
-                                        <option>Hall C</option>
-                                    </select>
-                                </div>
-                                <div className="pt-4 flex gap-3">
-                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-gray-100 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                                    <button type="submit" className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">Save Exam</button>
-                                </div>
-                            </form>
+                            </>
                         )}
                     </div>
                 </div>

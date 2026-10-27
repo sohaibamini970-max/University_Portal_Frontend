@@ -117,7 +117,7 @@ const ManageStudents = () => {
                 </div>
             </div>
 
-            {/* Data Table */}
+            {/* Data Table */}o
             <DataTable columns={columns} data={filteredData} itemsPerPage={5} />
         </div>
     );

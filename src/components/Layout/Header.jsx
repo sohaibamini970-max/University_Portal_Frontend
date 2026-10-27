@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Calendar, Menu } from 'lucide-react';
+import { Bell, Calendar, Menu, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ title, subtitle, onMenuClick }) => {
@@ -12,10 +12,20 @@ const Header = ({ title, subtitle, onMenuClick }) => {
         day: 'numeric',
     });
 
-    const enrollmentNo = user?.enrollmentNo || '2024F-BCS-134';
-    const displayName = user?.name
-        ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
-        : 'Student';
+    // 1. Read the exact fields returned by your .NET backend
+    const displayName = user?.fullName || user?.name || 'User';
+
+    // 2. Differentiate ID based on role (Super Admin has no enrollment No)
+    const userIdentifier = user?.enrollmentNo
+        ? user.enrollmentNo
+        : user?.role === 'superadmin'
+            ? 'Super Admin'
+            : user?.email || '';
+
+    // 3. Format the role nicely for display (e.g., 'superadmin' -> 'Super Admin')
+    const formattedRole = user?.role
+        ? user.role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+        : 'User';
 
     return (
         <header className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white border-b border-indigo-900 sticky top-0 z-30 shadow-md">
@@ -45,8 +55,8 @@ const Header = ({ title, subtitle, onMenuClick }) => {
                                 Welcome back, <span className="text-white">{displayName}</span>
                             </div>
                             <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-200 bg-white/10 px-2 py-1 rounded-md w-max backdrop-blur-sm">
-                                <span>ID:</span>
-                                <span className="font-semibold text-white">{enrollmentNo}</span>
+                                <Shield className="w-3 h-3 text-emerald-400" />
+                                <span className="font-semibold text-white">{formattedRole}</span>
                             </div>
                         </div>
                     </div>
@@ -60,9 +70,9 @@ const Header = ({ title, subtitle, onMenuClick }) => {
                         <p className="text-[10px] text-indigo-300 uppercase tracking-widest font-bold">
                             Welcome back
                         </p>
-                        <p className="text-sm">
-                            <span className="font-semibold text-indigo-200">{enrollmentNo}</span>
-                            <span className="text-indigo-400/50 mx-2">||</span>
+                        <p className="text-sm flex items-center justify-end gap-2">
+                            <span className="font-semibold text-indigo-200">{userIdentifier}</span>
+                            <span className="text-indigo-400/50">||</span>
                             <span className="font-bold text-white">{displayName}</span>
                         </p>
                     </div>
