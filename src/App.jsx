@@ -32,6 +32,7 @@ import ManageStudents from './pages/systemadmin/users/ManageStudents';
 import ManageTeachers from './pages/systemadmin/users/ManageTeachers';
 import ManageRegistration from './pages/systemadmin/registration/ManageRegistration';
 import FirstSemesterRegistration from './pages/systemadmin/registration/FirstSemesterRegistration';
+import StudentRegistrations from './pages/systemadmin/registration/StudentRegistrations';
 
 // Admin
 import AdminDashboard from './pages/admin/Dashboard';
@@ -240,6 +241,7 @@ function App() {
                         {/* 👇 New Separate Routes 👇 */}
                         <Route path="registration/manage" element={<ManageRegistration />} />
                         <Route path="registration/first-semester" element={<FirstSemesterRegistration />} />
+                        <Route path="registration/students" element={<StudentRegistrations />} />
                     </Route>
 
                     {/* Fallback */}

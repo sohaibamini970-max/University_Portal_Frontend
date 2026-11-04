@@ -38,6 +38,7 @@ const menuConfig = {
             children: [
                 { icon: Power, label: 'Manage Registration', path: '/systemadmin/registration/manage' },
                 { icon: GraduationCap, label: '1st Sem Auto-Assign', path: '/systemadmin/registration/first-semester' },
+                 { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
             ]
         },
     ],
