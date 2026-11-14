@@ -43,7 +43,10 @@ import ManageTeachers from './pages/systemadmin/users/ManageTeachers';
 import ManageRegistration from './pages/systemadmin/registration/ManageRegistration';
 import FirstSemesterLayout from './pages/systemadmin/registration/FirstSemesterLayout';
 import FirstSemesterRegistration from './pages/systemadmin/registration/FirstSemesterRegistration';
+<<<<<<< HEAD
 import ManageFirstSemester from './pages/systemadmin/registration/ManageFirstSemester';
+=======
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
 import StudentRegistrations from './pages/systemadmin/registration/StudentRegistrations';
 
 // Admin
@@ -292,6 +295,7 @@ function App() {
                     <Route path="/systemadmin/settings/password" element={<ProtectedRoute allowedRole="systemadmin"><PasswordSettings /></ProtectedRoute>} />
                     <Route path="/systemadmin/settings/profile" element={<ProtectedRoute allowedRole="systemadmin"><ProfileImage /></ProtectedRoute>} />
 
+<<<<<<< HEAD
                     <Route path="/admin/settings/password" element={<ProtectedRoute allowedRole="department_admin"><PasswordSettings /></ProtectedRoute>} />
                     <Route path="/admin/settings/profile" element={<ProtectedRoute allowedRole="department_admin"><ProfileImage /></ProtectedRoute>} />
 
@@ -309,6 +313,13 @@ function App() {
 
                     <Route path="/examination/settings/password" element={<ProtectedRoute allowedRole="department_admin"><PasswordSettings /></ProtectedRoute>} />
                     <Route path="/examination/settings/profile" element={<ProtectedRoute allowedRole="department_admin"><ProfileImage /></ProtectedRoute>} />
+=======
+                        {/* 👇 New Separate Routes 👇 */}
+                        <Route path="registration/manage" element={<ManageRegistration />} />
+                        <Route path="registration/first-semester" element={<FirstSemesterRegistration />} />
+                        <Route path="registration/students" element={<StudentRegistrations />} />
+                    </Route>
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/" replace />} />

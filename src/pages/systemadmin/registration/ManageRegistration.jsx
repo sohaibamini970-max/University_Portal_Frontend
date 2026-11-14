@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
+<<<<<<< HEAD
 import {
     Power, Layers, ArrowLeft, BookOpen, ChevronRight,
     GraduationCap, Users, CheckCircle, AlertTriangle
+=======
+import { 
+    Power, Layers, ArrowLeft, BookOpen, ChevronRight, 
+    GraduationCap, Users, CheckCircle, AlertTriangle 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
 } from 'lucide-react';
 
 const ManageRegistration = () => {
@@ -15,10 +21,17 @@ const ManageRegistration = () => {
                 {
                     id: 'B1', name: '2024-2028', isOpen: true,
                     departments: [
+<<<<<<< HEAD
                         {
                             name: 'Computer Science (BCS)',
                             courses: [
                                 {
+=======
+                        { 
+                            name: 'Computer Science (BCS)', 
+                            courses: [
+                                { 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                     code: 'CS-102', name: 'Programming Fundamentals', credits: 4, isOpen: true,
                                     sections: [
                                         { name: 'A', limit: 50, enrolled: 45 },
@@ -26,13 +39,21 @@ const ManageRegistration = () => {
                                         { name: 'C', limit: 40, enrolled: 0 },
                                     ]
                                 },
+<<<<<<< HEAD
                                 {
+=======
+                                { 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                     code: 'MATH-102', name: 'Calculus II', credits: 3, isOpen: true,
                                     sections: [
                                         { name: 'A', limit: 60, enrolled: 55 },
                                     ]
                                 }
+<<<<<<< HEAD
                             ]
+=======
+                            ] 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                         },
                     ]
                 }
@@ -44,17 +65,28 @@ const ManageRegistration = () => {
                 {
                     id: 'B3', name: '2023-2027', isOpen: false,
                     departments: [
+<<<<<<< HEAD
                         {
                             name: 'Software Engineering (BSE)',
                             courses: [
                                 {
+=======
+                        { 
+                            name: 'Software Engineering (BSE)', 
+                            courses: [
+                                { 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                     code: 'SE-201', name: 'Data Structures', credits: 4, isOpen: false,
                                     sections: [
                                         { name: 'A', limit: 45, enrolled: 40 },
                                         { name: 'B', limit: 45, enrolled: 30 },
                                     ]
                                 }
+<<<<<<< HEAD
                             ]
+=======
+                            ] 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                         }
                     ]
                 },
@@ -75,7 +107,11 @@ const ManageRegistration = () => {
             if (sem.semester === semesterName) {
                 return {
                     ...sem,
+<<<<<<< HEAD
                     batches: sem.batches.map(batch =>
+=======
+                    batches: sem.batches.map(batch => 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                         batch.id === batchId ? { ...batch, isOpen: !batch.isOpen } : batch
                     )
                 };
@@ -98,7 +134,11 @@ const ManageRegistration = () => {
                                     if (dept.name === deptName) {
                                         return {
                                             ...dept,
+<<<<<<< HEAD
                                             courses: dept.courses.map(course =>
+=======
+                                            courses: dept.courses.map(course => 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                                 course.code === courseCode ? { ...course, isOpen: !course.isOpen } : course
                                             )
                                         };
@@ -133,7 +173,11 @@ const ManageRegistration = () => {
                                                 if (course.code === courseCode) {
                                                     return {
                                                         ...course,
+<<<<<<< HEAD
                                                         sections: course.sections.map(sec =>
+=======
+                                                        sections: course.sections.map(sec => 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                                             sec.name === sectionName ? { ...sec, limit: Number(newLimit) } : sec
                                                         )
                                                     };
@@ -176,7 +220,11 @@ const ManageRegistration = () => {
                     {allSemesters.map(sem => {
                         const semData = registrationData.find(d => d.semester === sem);
                         const activeBatches = semData?.batches.filter(b => b.isOpen).length || 0;
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                         return (
                             <button
                                 key={sem}
@@ -193,7 +241,11 @@ const ManageRegistration = () => {
                                 </div>
                                 <h3 className="text-xl font-bold text-gray-900">{sem} Semester</h3>
                                 <p className="text-sm text-gray-500 mt-1">
+<<<<<<< HEAD
                                     {activeBatches > 0
+=======
+                                    {activeBatches > 0 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                         ? `${activeBatches} batch(es) open for registration`
                                         : 'No active registrations'}
                                 </p>
@@ -214,7 +266,11 @@ const ManageRegistration = () => {
         <div className="space-y-6 max-w-7xl mx-auto">
             {/* Header & Back Button */}
             <div className="flex items-center gap-4 mb-2">
+<<<<<<< HEAD
                 <button
+=======
+                <button 
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                     onClick={() => setSelectedSemester(null)}
                     className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                 >
@@ -231,6 +287,7 @@ const ManageRegistration = () => {
                 {currentSemData?.batches.length > 0 ? (
                     currentSemData.batches.map(batch => (
                         <div key={batch.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+<<<<<<< HEAD
 
                             {/* Batch Header */}
                             <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50">
@@ -333,13 +390,126 @@ const ManageRegistration = () => {
                                                         </div>
                                                     </div>
 
+=======
+                            
+                            {/* Batch Header */}
+                            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50">
+                                <div>
+                                    <h3 className="font-bold text-gray-900 text-lg">Batch: {batch.name}</h3>
+                                    <p className="text-xs text-gray-500 mt-0.5">Toggle registration to allow students to enroll.</p>
+                                </div>
+                                
+                                {/* Toggle Switch */}
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-xs font-bold uppercase tracking-wider ${batch.isOpen ? 'text-emerald-600' : 'text-red-500'}`}>
+                                        {batch.isOpen ? 'Registration Open' : 'Registration Closed'}
+                                    </span>
+                                    <button
+                                        onClick={() => handleToggleBatch(selectedSemester, batch.id)}
+                                        className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors focus:outline-none ${
+                                            batch.isOpen ? 'bg-emerald-500' : 'bg-gray-300'
+                                        }`}
+                                    >
+                                        <span className={`inline-block w-5 h-5 transform bg-white rounded-full transition-transform ${
+                                            batch.isOpen ? 'translate-x-6' : 'translate-x-1'
+                                        }`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Departments & Courses Grid */}
+                            <div className={`p-6 space-y-8 ${!batch.isOpen ? 'opacity-60 grayscale pointer-events-none' : ''}`}>
+                                {batch.departments.map(dept => (
+                                    <div key={dept.name}>
+                                        {/* Department Header */}
+                                        <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+                                            <GraduationCap className="w-5 h-5 text-indigo-600" />
+                                            <h4 className="font-bold text-gray-800 text-lg">{dept.name}</h4>
+                                        </div>
+                                        
+                                        {/* Courses List */}
+                                        <div className="space-y-4">
+                                            {dept.courses.map(course => (
+                                                <div key={course.code} className="border border-gray-200 rounded-xl p-4 shadow-sm bg-white">
+                                                    
+                                                    {/* Course Info & Toggle */}
+                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-xs">{course.code}</span>
+                                                                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{course.credits} Credits</span>
+                                                            </div>
+                                                            <h5 className="font-bold text-gray-900 text-lg">{course.name}</h5>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                                            <span className={`text-xs font-bold ${course.isOpen ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                                                {course.isOpen ? 'Open' : 'Closed'}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleToggleCourse(selectedSemester, batch.id, dept.name, course.code)}
+                                                                className={`relative inline-flex items-center h-5 w-9 rounded-full transition-colors ${
+                                                                    course.isOpen ? 'bg-emerald-500' : 'bg-gray-300'
+                                                                }`}
+                                                            >
+                                                                <span className={`inline-block w-3.5 h-3.5 transform bg-white rounded-full transition-transform ${
+                                                                    course.isOpen ? 'translate-x-4' : 'translate-x-1'
+                                                                }`} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Sections & Limits */}
+                                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <Layers className="w-4 h-4 text-gray-400" />
+                                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Sections & Limits</p>
+                                                        </div>
+                                                        
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                            {course.sections.map(sec => (
+                                                                <div key={sec.name} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-sm ${
+                                                                            sec.enrolled >= sec.limit 
+                                                                                ? 'bg-red-100 text-red-600' 
+                                                                                : 'bg-emerald-100 text-emerald-700'
+                                                                        }`}>
+                                                                            {sec.name}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold text-gray-500 uppercase">Enrolled</p>
+                                                                            <p className="text-xs font-bold text-gray-800">{sec.enrolled} / {sec.limit}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {/* Limit Input */}
+                                                                    <div className="flex flex-col items-end">
+                                                                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1">Max Limit</label>
+                                                                        <input 
+                                                                            type="number" 
+                                                                            value={sec.limit}
+                                                                            onChange={(e) => handleUpdateLimit(selectedSemester, batch.id, dept.name, course.code, sec.name, e.target.value)}
+                                                                            className="w-16 px-2 py-1 text-center bg-gray-50 border border-gray-300 rounded text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 ))}
                             </div>
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
                             {!batch.isOpen && (
                                 <div className="px-6 pb-6">
                                     <p className="text-xs text-red-500 font-bold flex items-center gap-1">

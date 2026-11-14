@@ -46,6 +46,7 @@ const menuConfig = {
             children: [
                 { icon: Power, label: 'Manage Registration', path: '/systemadmin/registration/manage' },
                 { icon: GraduationCap, label: '1st Sem Auto-Assign', path: '/systemadmin/registration/first-semester' },
+<<<<<<< HEAD
                 { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
             ]
         },
@@ -55,6 +56,9 @@ const menuConfig = {
             children: [
                 { icon: Lock, label: 'Change Password', path: '/systemadmin/settings/password' },
                 { icon: Image, label: 'Profile Image', path: '/systemadmin/settings/profile' },
+=======
+                 { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
+>>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
             ]
         },
     ],
