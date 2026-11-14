@@ -73,7 +73,7 @@ const EducationDepartments = () => {
                                         <Icon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-gray-900 leading-tight">{dept.name}</h3>
+                                        <h3 className="font-bold text-lg text-gray-900 leading-tight">{dept.name}</h3>
                                         <p className="text-xs font-semibold text-gray-500 mt-0.5">Code: {dept.code}</p>
                                     </div>
                                 </div>
@@ -91,7 +91,7 @@ const EducationDepartments = () => {
                                 </div>
                             </div>
 
-                            <p className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{dept.description || 'No description provided.'}</p>
+                            <p className="text-sm text-gray-500 mb-4 line-clamp-2 min-h-[32px]">{dept.description || 'No description provided.'}</p>
 
                             <div className="mt-auto pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
                                 <div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import unilogo from '../../assets/unilogo.png';
 import { useAuth } from '../../context/AuthContext';
 import {
     LayoutDashboard, Users, BookOpen, GraduationCap, Building2,
@@ -57,7 +58,6 @@ const menuConfig = {
             ]
         },
     ],
-    // 👇 EDUCATION DEPARTMENTS (CS, IT, SE)
     department_admin: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
         {
@@ -93,7 +93,6 @@ const menuConfig = {
             ]
         },
     ],
-    // 👇 BUSINESS DEPARTMENTS (Admissions, Finance, Examination)
     admissions: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admissions/dashboard' },
         { icon: Users, label: 'Students', path: '/admissions/students' },
@@ -143,6 +142,7 @@ const menuConfig = {
     ],
     teacher: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/teacher/dashboard' },
+        { icon: BookOpen, label: 'My Courses', path: '/teacher/courses' },
         { icon: BookOpen, label: 'My Classes', path: '/teacher/classes' },
         { icon: UserCheck, label: 'Attendance', path: '/teacher/attendance' },
         { icon: ClipboardList, label: 'Assessment', path: '/teacher/assessments' },
@@ -169,7 +169,7 @@ const menuConfig = {
         },
         {
             icon: BookOpen,
-            label: 'Courses',
+            label: 'Course',
             children: [
                 { icon: BookOpen, label: 'My Courses', path: '/student/courses' },
                 { icon: Info, label: 'Course Info', path: '/student/course-info' },
@@ -183,6 +183,13 @@ const menuConfig = {
             ],
         },
         {
+            icon: DollarSign,
+            label: 'Fee',
+            children: [
+                { icon: Download, label: 'Download Voucher', path: '/student/fee-voucher' },
+            ],
+        },
+        {
             icon: Award,
             label: 'Exam',
             children: [
@@ -191,13 +198,6 @@ const menuConfig = {
                 { icon: Trophy, label: 'Results', path: '/student/results' },
                 { icon: Laptop, label: 'Online Exam', path: '/student/online-exam' },
                 { icon: FileText, label: 'Transcript', path: '/student/transcript' },
-            ],
-        },
-        {
-            icon: DollarSign,
-            label: 'Fee',
-            children: [
-                { icon: Download, label: 'Download Voucher', path: '/student/fee-voucher' },
             ],
         },
         {
@@ -224,8 +224,8 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
 
     if (isCollapsed) {
         return (
-            <div className="sidebar-item justify-center" title={item.label}>
-                <Icon className="w-5 h-5 shrink-0" />
+            <div className="flex justify-center p-3 text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer" title={item.label}>
+                <Icon className="w-6 h-6 shrink-0" />
             </div>
         );
     }
@@ -234,17 +234,18 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
         <div>
             <button
                 onClick={() => setOpen(!open)}
-                className={`sidebar-item w-full justify-between ${open ? 'sidebar-item-active' : ''}`}
+                className={`w-full flex items-center justify-between px-4 py-3.5 text-[15px] font-bold rounded-lg transition-colors ${open ? 'text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
             >
-                <span className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 shrink-0" />
+                <span className="flex items-center gap-4">
+                    <Icon className="w-5 h-5 shrink-0 text-slate-500" strokeWidth={2} />
                     <span>{item.label}</span>
                 </span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`} />
+                <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} strokeWidth={2.5} />
             </button>
 
             {open && (
-                <div className="ml-4 mt-1 pl-3 border-l-2 border-blue-100 space-y-1">
+                <div className="ml-5 pl-4 border-l-2 border-slate-100 space-y-1 my-1">
                     {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         return (
@@ -253,10 +254,13 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
                                 to={child.path}
                                 onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-slate-500 hover:bg-gray-50 hover:text-blue-600'}`
+                                    `flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors ${isActive
+                                        ? 'bg-blue-50 text-blue-600'
+                                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    }`
                                 }
                             >
-                                <ChildIcon className="w-3.5 h-3.5 shrink-0" />
+                                <ChildIcon className="w-4 h-4 shrink-0" strokeWidth={2.5} />
                                 <span>{child.label}</span>
                             </NavLink>
                         );
@@ -271,16 +275,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-    // 👇 SMART MENU SELECTION LOGIC 👇
     let menuKey = user?.role;
-
     if (user?.role === 'department_admin') {
         const deptCode = user.departmentCode || user.department?.code;
-
         if (deptCode === 'ADM') menuKey = 'admissions';
         else if (deptCode === 'FIN') menuKey = 'finance';
         else if (deptCode === 'EXM') menuKey = 'examination';
-        else menuKey = 'department_admin'; // Fallback for CS, IT, SE
+        else menuKey = 'department_admin';
     }
 
     const menuItems = menuConfig[menuKey] || [];
@@ -293,38 +294,53 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
     return (
         <aside
             className={`
-                bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 z-50
+                bg-white border-r border-slate-200 h-screen flex flex-col transition-all duration-300 z-50
                 md:sticky md:top-0 md:translate-x-0
-                ${isCollapsed ? 'md:w-20' : 'md:w-64'}
-                fixed inset-y-0 left-0 w-64 shadow-2xl
+                ${isCollapsed ? 'md:w-20' : 'md:w-[280px]'}
+                fixed inset-y-0 left-0 w-[280px] shadow-sm
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
         >
-            {/* Logo & Mobile Close Button */}
-            <div className="flex items-center justify-between px-4 h-16 border-b border-gray-100 shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6, #7e22ce)' }}>
-                        <GraduationCap className="w-6 h-6 text-white" />
+            {/* Top Logo & Collapse Section */}
+            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-5 h-[100px] shrink-0 border-b border-slate-100 relative`}>
+                <div className="flex items-center gap-2">
+
+                    {/* Transparent Logo */}
+                    <div className="flex items-center justify-center shrink-0">
+                        <img src={unilogo} alt="University Logo" className={isCollapsed ? "w-10 h-10 object-contain" : "w-[60px] h-auto object-contain"} />
                     </div>
-                    {(!isCollapsed || isMobileOpen) && (
-                        <div>
-                            <h1 className="font-bold text-gray-800 text-sm leading-tight">University</h1>
-                            <p className="text-xs text-gray-500">Portal</p>
+
+                    {/* Vertical Line & Text (Hidden when collapsed) */}
+                    {!isCollapsed && !isMobileOpen && (
+                        <div className="flex items-center gap-2">
+                            <div className="h-10 w-[1px] bg-slate-300"></div>
+                            <div className="flex flex-col">
+                                <h1 className="font-bold text-[#4a2b6e] text-sm leading-tight tracking-tight">Sir Syed University</h1>
+                                <p className="text-[10px] font-semibold text-slate-500 italic">of Engineering & Technology</p>
+                            </div>
                         </div>
                     )}
                 </div>
 
+                {/* Desktop Collapse Button (Top Right) */}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="hidden md:flex text-slate-500 hover:text-slate-700 transition-colors p-1"
+                >
+                    {isCollapsed ? <ChevronRight className="w-6 h-6" strokeWidth={2} /> : <ChevronLeft className="w-8 h-8" strokeWidth={2} />}
+                </button>
+
+                {/* Mobile Close Button */}
                 <button
                     onClick={() => setIsMobileOpen(false)}
-                    className="md:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="md:hidden text-slate-400 hover:text-slate-700 p-1"
                 >
-                    <X className="w-5 h-5" />
+                    <X className="w-6 h-6" />
                 </button>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
                 {menuItems.map((item, idx) =>
                     item.children ? (
                         <SidebarGroup key={idx} item={item} isCollapsed={isCollapsed && !isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
@@ -334,38 +350,27 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                             to={item.path}
                             onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
                             className={({ isActive }) =>
-                                `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${isCollapsed && !isMobileOpen ? 'justify-center' : ''}`
+                                `flex items-center gap-4 px-4 py-3.5 text-[15px] font-bold rounded-lg transition-colors ${isActive
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                                } ${isCollapsed && !isMobileOpen ? 'justify-center' : ''}`
                             }
                             title={isCollapsed && !isMobileOpen ? item.label : ''}
                         >
-                            <item.icon className="w-5 h-5 shrink-0" />
+                            <item.icon className={`w-5 h-5 shrink-0 ${isCollapsed && !isMobileOpen ? '' : 'text-slate-500'}`} strokeWidth={2} />
                             {(!isCollapsed || isMobileOpen) && <span>{item.label}</span>}
                         </NavLink>
                     )
                 )}
             </nav>
 
-            {/* Footer */}
-            <div className="p-3 border-t border-gray-100 space-y-1 shrink-0">
-                <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className={`hidden md:flex sidebar-item w-full ${isCollapsed && !isMobileOpen ? 'justify-center' : ''}`}
-                >
-                    {isCollapsed && !isMobileOpen ? (
-                        <ChevronRight className="w-5 h-5" />
-                    ) : (
-                        <>
-                            <ChevronLeft className="w-5 h-5" />
-                            <span>Collapse</span>
-                        </>
-                    )}
-                </button>
-
+            {/* Footer (Only Logout) */}
+            <div className="p-4 border-t border-slate-100 shrink-0">
                 <button
                     onClick={handleLogout}
-                    className={`sidebar-item w-full text-red-500 hover:bg-red-50 hover:text-red-600 ${isCollapsed && !isMobileOpen ? 'justify-center' : ''}`}
+                    className={`flex items-center gap-4 px-4 py-3 text-[15px] font-bold rounded-lg text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors w-full ${isCollapsed && !isMobileOpen ? 'justify-center' : ''}`}
                 >
-                    <LogOut className="w-5 h-5 shrink-0" />
+                    <LogOut className="w-5 h-5 shrink-0 text-slate-500" strokeWidth={2} />
                     {(!isCollapsed || isMobileOpen) && <span>Logout</span>}
                 </button>
             </div>

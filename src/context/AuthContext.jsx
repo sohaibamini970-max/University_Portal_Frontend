@@ -5,39 +5,29 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// Axios instance
 export const api = axios.create({
     baseURL: 'https://localhost:7084/api',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token to requests
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        if (token) config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
     (error) => Promise.reject(error)
 );
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
+    // 👇 INITIALIZE SYNCHRONOUSLY FROM LOCALSTORAGE
+    const [user, setUser] = useState(() => {
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
-        }
-        setLoading(false);
-    }, []);
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
 
-    // 1. Standard Login (Admins, Students)
+    const [loading, setLoading] = useState(false);
+
     const login = async (email, password) => {
         try {
             const response = await api.post('/auth/login', { email, password });
@@ -50,12 +40,10 @@ export const AuthProvider = ({ children }) => {
 
             return userData;
         } catch (error) {
-            const message = error.response?.data?.message || error.message || "Login failed";
-            throw new Error(message);
+            throw new Error(error.response?.data?.message || "Login failed");
         }
     };
 
-    // 2. 👇 Custom Login for Teachers (Employee ID) 👇
     const loginWithToken = (userData, token) => {
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
@@ -71,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{ user, login, loginWithToken, logout, loading }}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };

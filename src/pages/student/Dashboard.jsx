@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
 import AnnouncementPopup from '../../components/common/AnnouncementPopup';
+import { api } from '../../context/AuthContext'; // 👈 Import API
 import {
     Award, TrendingUp, DollarSign, BookOpen, Calendar, Clock, MapPin,
     ArrowRight, CheckCircle, Trophy, Download, Ticket, Bell, ChevronRight,
-    GraduationCap, Sparkles, ClipboardList, User, Hash, Users, Activity, BookMarked
+    GraduationCap, Sparkles, ClipboardList, User, Hash, Users, Activity, BookMarked, Loader2
 } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, subtext, color, background, tag }) => (
@@ -40,34 +41,33 @@ const SectionHeading = ({ title, subtitle, link, to, icon: Icon }) => (
 );
 
 const StudentDashboard = () => {
-    const studentInfo = {
-        name: 'Muhammad Suhaib',
-        regNo: '5950/BCS/2024F',
-        section: 'C',
-        session: 'Fall 2024 - Spring 2028',
-        status: 'Active (Regular)',
-        program: 'BS Computer Science (BCS)'
-    };
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        const fetchDashboard = async () => {
+            try {
+                const res = await api.get('/students/dashboard-stats');
+                setData(res.data);
+            } catch (error) {
+                console.error("Failed to load dashboard", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDashboard();
+    }, []);
+
+    // Static Placeholders (As requested)
     const stats = [
         { icon: Award, label: 'Current CGPA', value: '3.75', subtext: 'Out of 4.00 · Strong performance', tag: 'Academic', background: 'bg-[#2563EB]' },
         { icon: TrendingUp, label: 'Attendance', value: '92%', subtext: 'Excellent · Keep it consistent', tag: 'Attendance', background: 'bg-[#0F9D8A]' },
-        { icon: BookOpen, label: 'Enrolled Courses', value: '06', subtext: 'Active courses this semester', tag: 'Learning', background: 'bg-[#7C3AED]' },
-        { icon: DollarSign, label: 'Fee Status', value: 'Paid', subtext: 'Next due: December 15', tag: 'Finance', background: 'bg-[#EA580C]' }
-    ];
-
-    const courses = [
-        { code: 'CS-301', name: 'Data Structures', teacher: 'John Doe', grade: 'A', color: 'text-blue-600' },
-        { code: 'CS-302', name: 'Web Development', teacher: 'Sarah Wilson', grade: 'B+', color: 'text-violet-600' },
-        { code: 'CS-303', name: 'Algorithms', teacher: 'Mike Chen', grade: 'A-', color: 'text-emerald-600' },
-        { code: 'CS-304', name: 'Databases', teacher: 'Lisa Brown', grade: 'B', color: 'text-orange-600' }
+        { icon: BookOpen, label: 'Enrolled Courses', value: data ? data.courses.length.toString().padStart(2, '0') : '00', subtext: 'Active courses this semester', tag: 'Learning', background: 'bg-[#7C3AED]' },
+        { icon: DollarSign, label: 'Fee Status', value: 'Pending', subtext: 'Module coming soon', tag: 'Finance', background: 'bg-[#EA580C]' }
     ];
 
     const attendance = [
-        { name: 'Data Structures', attended: 38, total: 40, percentage: 95, color: 'bg-emerald-500' },
-        { name: 'Web Development', attended: 30, total: 35, percentage: 85, color: 'bg-blue-500' },
-        { name: 'Algorithms', attended: 39, total: 42, percentage: 92, color: 'bg-emerald-500' },
-        { name: 'Databases', attended: 21, total: 30, percentage: 70, color: 'bg-orange-500' }
+        { name: 'Attendance Tracking', attended: 0, total: 0, percentage: 0, color: 'bg-gray-300' },
     ];
 
     const announcements = [
@@ -83,8 +83,11 @@ const StudentDashboard = () => {
         { icon: Trophy, label: 'Academic Results', description: 'View your examination results', path: '/student/results', color: 'bg-emerald-100 text-emerald-700', hover: 'hover:border-emerald-300 hover:bg-emerald-50' }
     ];
 
+    if (loading) return <Layout title="Student Dashboard"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
+    if (!data) return <Layout title="Student Dashboard"><div className="p-10 text-center text-red-500">Failed to load data.</div></Layout>;
+
     return (
-        <Layout title="Student Dashboard" subtitle="Enrollment No: 5950/BCS/2024F | Section C">
+        <Layout title="Student Dashboard" subtitle={`Enrollment No: ${data.studentInfo.regNo} | Section ${data.studentInfo.section}`}>
             <AnnouncementPopup />
             <div className="relative -mx-3 space-y-6 overflow-hidden rounded-3xl bg-gray-50 px-3 py-5 sm:-mx-5 sm:px-5 lg:px-6">
 
@@ -108,27 +111,27 @@ const StudentDashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-5">
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0 mt-0.5"><User className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Full Name</p><p className="text-sm font-bold text-slate-800 mt-0.5">{studentInfo.name}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Full Name</p><p className="text-sm font-bold text-slate-800 mt-0.5">{data.studentInfo.name}</p></div>
                         </div>
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0 mt-0.5"><Hash className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Registration No</p><p className="text-sm font-bold text-slate-800 mt-0.5">{studentInfo.regNo}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Registration No</p><p className="text-sm font-bold text-slate-800 mt-0.5">{data.studentInfo.regNo}</p></div>
                         </div>
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0 mt-0.5"><Users className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Section</p><p className="text-sm font-bold text-slate-800 mt-0.5">{studentInfo.section}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Section</p><p className="text-sm font-bold text-slate-800 mt-0.5">{data.studentInfo.section}</p></div>
                         </div>
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0 mt-0.5"><GraduationCap className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Program</p><p className="text-sm font-bold text-slate-800 mt-0.5">{studentInfo.program}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Program</p><p className="text-sm font-bold text-slate-800 mt-0.5">{data.studentInfo.program}</p></div>
                         </div>
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0 mt-0.5"><Calendar className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Session</p><p className="text-sm font-bold text-slate-800 mt-0.5">{studentInfo.session}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Session (Batch)</p><p className="text-sm font-bold text-slate-800 mt-0.5">{data.studentInfo.session}</p></div>
                         </div>
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-teal-50 text-teal-600 rounded-lg shrink-0 mt-0.5"><Activity className="w-4 h-4" /></div>
-                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p><p className="text-sm font-bold text-emerald-600 mt-0.5 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>{studentInfo.status}</p></div>
+                            <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</p><p className="text-sm font-bold text-emerald-600 mt-0.5 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Active</p></div>
                         </div>
                     </div>
                 </div>
@@ -138,46 +141,42 @@ const StudentDashboard = () => {
                     {/* My Courses */}
                     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6 xl:col-span-2">
                         <SectionHeading title="My Courses" subtitle="Your learning progress this semester" link="View all" to="/student/courses" icon={BookOpen} />
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            {courses.map((course) => (
-                                <div key={course.code} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
-                                    <div className="flex items-start justify-between gap-2 mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 border border-gray-100 ${course.color}`}>
-                                                <BookOpen className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-slate-900">{course.name}</h3>
-                                                <p className="text-xs font-semibold text-gray-500">{course.code}</p>
+                        {data.courses.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {data.courses.map((course) => (
+                                    <div key={course.code} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                                        <div className="flex items-start justify-between gap-2 mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 border border-gray-100 text-indigo-600">
+                                                    <BookOpen className="h-5 w-5" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-slate-900">{course.name}</h3>
+                                                    <p className="text-xs font-semibold text-gray-500">{course.code}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <span className="rounded bg-gray-100 px-2 py-1 text-xs font-bold text-gray-700">{course.grade}</span>
+                                        <p className="text-xs text-gray-500">Credit Hours: <span className="font-semibold text-gray-800">{course.creditHours}</span></p>
+                                        <Link to="/student/courses" className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors">
+                                            View Details <ArrowRight className="h-4 w-4" />
+                                        </Link>
                                     </div>
-                                    <p className="text-xs text-gray-500">Instructor <span className="font-semibold text-gray-800">{course.teacher}</span></p>
-                                    <Link to="/student/courses" className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors">
-                                        View Details <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center text-gray-500 border border-dashed border-gray-300 rounded-xl">
+                                No courses assigned yet.
+                            </div>
+                        )}
                     </section>
 
-                    {/* My Attendance */}
+                    {/* My Attendance - Placeholder */}
                     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
                         <SectionHeading title="My Attendance" subtitle="Current semester overview" icon={Calendar} />
                         <div className="space-y-4">
-                            {attendance.map((item) => (
-                                <div key={item.name}>
-                                    <div className="flex justify-between text-xs mb-1.5">
-                                        <span className="font-semibold text-gray-700">{item.name}</span>
-                                        <span className="font-bold text-gray-900">{item.percentage}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.percentage}%` }} />
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 mt-1">{item.attended} / {item.total} classes attended</p>
-                                </div>
-                            ))}
+                            <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
+                                Attendance tracking will be available soon.
+                            </div>
                         </div>
                         <Link to="/student/attendance" className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-gray-900">
                             View Detailed Attendance <ArrowRight className="h-4 w-4" />

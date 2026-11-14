@@ -12,30 +12,39 @@ const AdminLogin = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    // Inside AdminLogin.jsx
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        setIsLoading(true); // 👈 Start loading
+        setIsLoading(true);
 
         try {
-            const user = await login(email, password);
+            const userData = await login(email, password);
 
-            // Redirect based on role
-            if (user.role === 'superadmin') navigate('/superadmin/dashboard');
-            else if (user.role === 'systemadmin') navigate('/systemadmin/dashboard');
-            else if (user.role === 'department_admin') {
-                // Smart redirect based on department code
-                const deptCode = user.departmentCode || user.department?.code;
-                if (deptCode === 'ADM') navigate('/admissions/dashboard');
-                else if (deptCode === 'FIN') navigate('/finance/dashboard');
-                else if (deptCode === 'EXM') navigate('/examination/dashboard');
-                else navigate('/admin/dashboard');
+            let redirectPath = '/';
+
+            if (userData.role === 'department_admin') {
+                const deptCode = userData.departmentCode || userData.department?.code;
+                if (deptCode === 'ADM') redirectPath = '/admissions/dashboard';
+                else if (deptCode === 'FIN') redirectPath = '/finance/dashboard';
+                else if (deptCode === 'EXM') redirectPath = '/examination/dashboard';
+                else redirectPath = '/admin/dashboard';
+            } else {
+                const redirectMap = {
+                    superadmin: '/superadmin/dashboard',
+                    teacher: '/teacher/dashboard',
+                    student: '/student/dashboard',
+                    systemadmin: '/systemadmin/dashboard',
+                };
+                redirectPath = redirectMap[userData.role] || '/';
             }
-            else navigate('/'); // Fallback
+
+            // 👇 FORCE HARD RELOAD
+            window.location.href = redirectPath;
+
         } catch (err) {
             setError(err.message);
-        } finally {
-            setIsLoading(false); // 👈 Stop loading on failure
+            setIsLoading(false);
         }
     };
 

@@ -1,51 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../../components/Layout/Layout';
-import { BookOpen, User, Award, ChevronRight, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { api } from '../../../context/AuthContext';
+import { BookOpen, User, Award, ChevronRight, Loader2, GraduationCap } from 'lucide-react';
 
 const Courses = () => {
-    // Added session and semester to the data
-    const courses = [
-        { id: 1, code: 'CS-301', name: 'Data Structures', teacher: 'John Doe', credits: 4, grade: 'A', progress: 100, color: 'bg-blue-500', type: 'Core', session: '2024 Fall', semester: '5th' },
-        { id: 2, code: 'CS-302', name: 'Web Development', teacher: 'Sarah Wilson', credits: 3, grade: 'B+', progress: 60, color: 'bg-purple-500', type: 'Core', session: '2024 Spring', semester: '5th' },
-        { id: 3, code: 'CS-303', name: 'Algorithms', teacher: 'Mike Chen', credits: 4, grade: 'A-', progress: 85, color: 'bg-teal-500', type: 'Core', session: '2024 Spring', semester: '5th' },
-        { id: 4, code: 'CS-304', name: 'Databases', teacher: 'Lisa Brown', credits: 3, grade: 'F', progress: 45, color: 'bg-red-500', type: 'Core', session: '2024 Spring', semester: '4th' },
-        { id: 5, code: 'CS-305', name: 'Operating Systems', teacher: 'David Lee', credits: 4, grade: 'A', progress: 100, color: 'bg-pink-500', type: 'Core', session: '2024 Fall', semester: '4th' },
-        { id: 6, code: 'CS-306', name: 'Computer Networks', teacher: 'Emma Wilson', credits: 3, grade: 'B+', progress: 30, color: 'bg-indigo-500', type: 'Elective', session: '2024 Fall', semester: '4th' },
-    ];
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const res = await api.get('/students/my-courses');
+                setCourses(res.data);
+            } catch (error) {
+                console.error("Failed to fetch courses", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCourses();
+    }, []);
+
+    // Calculate Summary Dynamically
+    const totalCourses = courses.length;
+    const totalCredits = courses.reduce((sum, c) => sum + c.creditHours, 0);
+
+    // Grabbing the current semester/session from the first course (assuming they are all in the same batch)
+    const currentSemester = courses.length > 0 ? courses[0].semester : 'N/A';
+    const currentSession = courses.length > 0 ? courses[0].session : 'N/A';
 
     const summary = [
-        { label: 'Total Courses', value: '06', gradient: 'bg-gradient-to-br from-blue-500 to-indigo-600' },
-        { label: 'Total Credits', value: '21', gradient: 'bg-gradient-to-br from-purple-500 to-pink-600' },
-        { label: 'Average Grade', value: 'A-', gradient: 'bg-gradient-to-br from-teal-500 to-emerald-600' },
+        { label: 'Total Courses', value: totalCourses.toString().padStart(2, '0'), gradient: 'bg-gradient-to-br from-blue-500 to-indigo-600' },
+        { label: 'Total Credits', value: totalCredits.toString(), gradient: 'bg-gradient-to-br from-purple-500 to-pink-600' },
+        { label: 'Current Semester', value: currentSemester, gradient: 'bg-gradient-to-br from-teal-500 to-emerald-600' },
     ];
 
-    // Helper to render dynamic status badges
-    const getStatusBadge = (progress, grade) => {
-        if (grade === 'F') {
-            return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-red-100 text-red-700">
-                    <XCircle className="w-3.5 h-3.5" /> Failed
-                </span>
-            );
-        }
-        if (progress >= 100) {
-            return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700">
-                    <CheckCircle className="w-3.5 h-3.5" /> Passed
-                </span>
-            );
-        }
-        return (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700">
-                <Clock className="w-3.5 h-3.5" /> In Progress
-            </span>
-        );
-    };
+    if (loading) return <Layout title="My Courses"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
 
     return (
-        <Layout title="My Courses" subtitle="Fall 2024 · Semester 5 · Section C">
-            <div className="space-y-6 pb-8">
+        <Layout title="My Courses" subtitle={`${currentSession} · Semester ${currentSemester}`}>
+            <div className="space-y-6 pb-8 max-w-7xl mx-auto">
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -73,86 +68,91 @@ const Courses = () => {
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[900px]">
-
-                            {/* Table Header */}
                             <thead>
-                                <tr className="bg-blue-600 text-gray-100 text-xs uppercase tracking-wider border-b border-slate-700">
+                                <tr className="bg-slate-800 text-slate-200 text-xs uppercase tracking-wider border-b border-slate-700">
                                     <th className="px-6 py-4 font-semibold">Code</th>
                                     <th className="px-6 py-4 font-semibold">Course Name</th>
                                     <th className="px-6 py-4 font-semibold text-center">Session</th>
                                     <th className="px-6 py-4 font-semibold text-center">Semester</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Section</th>
                                     <th className="px-6 py-4 font-semibold">Instructor</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Credit Hour</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Status</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Credits</th>
                                     <th className="px-6 py-4 font-semibold text-center">Action</th>
                                 </tr>
                             </thead>
 
-                            {/* Table Body with Alternating Rows */}
                             <tbody className="divide-y divide-gray-100">
-                                {courses.map((course, idx) => {
-                                    // Alternating row colors
-                                    const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+                                {courses.length > 0 ? (
+                                    courses.map((course, idx) => {
+                                        const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
 
-                                    return (
-                                        <tr key={course.id} className={`${rowBg} hover:bg-indigo-50 transition-colors`}>
+                                        return (
+                                            <tr key={course.id} className={`${rowBg} hover:bg-indigo-50 transition-colors`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2 h-8 rounded-full bg-indigo-500"></div>
+                                                        <span className="text-sm font-bold text-gray-700">{course.code}</span>
+                                                    </div>
+                                                </td>
 
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-8 rounded-full ${course.color}`}></div>
-                                                    <span className="text-sm font-bold text-gray-700">{course.code}</span>
-                                                </div>
-                                            </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-gray-800 text-sm">{course.name}</p>
+                                                    <span className={`inline-block mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded ${course.type === 'Core' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'
+                                                        }`}>
+                                                        {course.type || 'Core'}
+                                                    </span>
+                                                </td>
 
-                                            <td className="px-6 py-4">
-                                                <p className="font-bold text-gray-800 text-sm">{course.name}</p>
-                                                <span className={`inline-block mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded ${course.type === 'Core' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'
-                                                    }`}>
-                                                    {course.type}
-                                                </span>
-                                            </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="text-sm font-semibold text-gray-700">{course.session}</span>
+                                                </td>
 
-                                            {/* New Session Column */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="text-sm font-semibold text-gray-700">{course.session}</span>
-                                            </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="inline-block bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-2 py-1 rounded-md">
+                                                        {course.semester}
+                                                    </span>
+                                                </td>
 
-                                            {/* New Semester Column */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="inline-block bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-2 py-1 rounded-md">
-                                                    {course.semester}
-                                                </span>
-                                            </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="inline-block bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold px-2 py-1 rounded-md">
+                                                        {course.section}
+                                                    </span>
+                                                </td>
 
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <User className="w-4 h-4 text-gray-400" />
-                                                    {course.teacher}
-                                                </div>
-                                            </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <User className="w-4 h-4 text-gray-400" />
+                                                        {course.teacher}
+                                                    </div>
+                                                </td>
 
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="inline-flex items-center justify-center gap-1 text-sm font-medium text-gray-600 bg-gray-100/80 px-2.5 py-1 rounded-md">
-                                                    <Award className="w-4 h-4 text-gray-400" />
-                                                    {course.credits}
-                                                </div>
-                                            </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1 text-sm font-medium text-gray-600 bg-gray-100/80 px-2.5 py-1 rounded-md">
+                                                        <Award className="w-4 h-4 text-gray-400" />
+                                                        {course.creditHours}
+                                                    </div>
+                                                </td>
 
-                                            <td className="px-6 py-4 text-center">
-                                                {getStatusBadge(course.progress, course.grade)}
-                                            </td>
-
-                                            <td className="px-6 py-4 text-center">
-                                                <Link
-                                                    to="/student/course-info"
-                                                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors"
-                                                >
-                                                    Details <ChevronRight className="w-3.5 h-3.5" />
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                <td className="px-6 py-4 text-center">
+                                                    <Link
+                                                        to="/student/course-info"
+                                                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors"
+                                                    >
+                                                        Details <ChevronRight className="w-3.5 h-3.5" />
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                                            <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                                            <p className="font-bold text-lg">No Courses Assigned</p>
+                                            <p className="text-sm">You have not been enrolled in any courses for the current semester.</p>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

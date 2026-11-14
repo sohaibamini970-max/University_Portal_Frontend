@@ -78,6 +78,7 @@ import TeacherDashboard from './pages/teacher/Dashboard';
 import Classes from './pages/teacher/Classes';
 import TeacherAttendance from './pages/teacher/Attendance';
 import Assessments from './pages/teacher/Assessments';
+import TeacherCourses from './pages/teacher/TeacherCourses';
 
 // Admission
 import AdmissionsLayout from './pages/admission/AdmissionsLayout';
@@ -111,6 +112,7 @@ import ProfileImage from './pages/shared/ProfileImage';
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRole }) => {
     const { user } = useAuth();
+
     if (!user) return <Navigate to="/" replace />;
 
     if (allowedRole && user.role !== allowedRole) {
@@ -243,6 +245,7 @@ function App() {
                     <Route path="/teacher/classes" element={<ProtectedRoute allowedRole="teacher"><Classes /></ProtectedRoute>} />
                     <Route path="/teacher/attendance" element={<ProtectedRoute allowedRole="teacher"><TeacherAttendance /></ProtectedRoute>} />
                     <Route path="/teacher/assessments" element={<ProtectedRoute allowedRole="teacher"><Assessments /></ProtectedRoute>} />
+                    <Route path="/teacher/courses" element={<ProtectedRoute allowedRole="teacher"><TeacherCourses /></ProtectedRoute>} />
 
                     {/* ================= ADMISSIONS (Handled by Department Admin) ================= */}
                     <Route path="/admissions" element={<ProtectedRoute allowedRole="department_admin"><AdmissionsLayout /></ProtectedRoute>}>

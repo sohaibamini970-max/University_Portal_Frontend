@@ -54,29 +54,29 @@ const CreateCourse = () => {
             <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Course Code</label>
+                        <label className="block text-lg font-bold text-gray-700 mb-1">Course Code</label>
                         <input required type="text" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g., CS-301" disabled={isLoading} />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Course Name</label>
+                        <label className="block text-lg font-bold text-gray-700 mb-1">Course Name</label>
                         <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g., Data Structures" disabled={isLoading} />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Course Type</label>
+                        <label className="block text-lg font-bold text-gray-700 mb-1">Course Type</label>
                         <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-semibold" disabled={isLoading}>
                             <option>Core</option>
                             <option>Elective</option>
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Credit Hours</label>
+                        <label className="block text-lg font-bold text-gray-700 mb-1">Credit Hours</label>
                         <input required type="number" min="1" max="6" value={formData.creditHours} onChange={e => setFormData({ ...formData, creditHours: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm" disabled={isLoading} />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Prerequisite (Optional)</label>
+                        <label className="block text-lg font-bold text-gray-700 mb-1">Prerequisite (Optional)</label>
                         <select value={formData.prerequisiteId} onChange={e => setFormData({ ...formData, prerequisiteId: e.target.value })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-semibold" disabled={isLoading}>
                             <option value="">None</option>
                             {availableCourses.map(c => (

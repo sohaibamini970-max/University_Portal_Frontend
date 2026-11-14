@@ -9,9 +9,7 @@ const FirstSemesterLayout = () => {
     const isManageTab = location.pathname.includes('manage');
 
     return (
-       
             <div className="space-y-6 max-w-7xl mx-auto">
-
                 {/* Tabs */}
                 <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200 w-max">
                     <NavLink
