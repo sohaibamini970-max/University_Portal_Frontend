@@ -1,174 +1,164 @@
-    import React, { useState } from 'react';
-    import Layout from '../../components/Layout/Layout';
-    import { BookOpen, Users, Clock, MapPin, Calendar, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import Layout from '../../components/Layout/Layout';
+import { BookOpen, Users, Clock, MapPin, Calendar, Filter, Loader2 } from 'lucide-react';
+import { api } from '../../context/AuthContext';
 
-    const Classes = () => {
-        const [selectedSection, setSelectedSection] = useState('A');
+const Classes = () => {
+    const [timetable, setTimetable] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-        // Time slots for the timetable header
-        const timeSlots = [
-            '08:30 - 09:50',
-            '10:00 - 11:20',
-            '11:30 - 12:50',
-            '01:30 - 02:50',
-            '03:00 - 04:20'
-        ];
+    // Filter state
+    const [selectedProgram, setSelectedProgram] = useState('All');
+    const [selectedBatch, setSelectedBatch] = useState('All');
 
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    // Dynamic Time Slots (Can also be fetched from backend, but hardcoded for now to match the grid)
+    const timeSlots = [
+        '08:00 - 08:50', '08:50 - 09:40', '09:40 - 10:30',
+        '10:30 - 11:20', '11:20 - 12:10', '12:10 - 01:00',
+        '01:30 - 02:20', '02:20 - 03:10', '03:10 - 04:00'
+    ];
 
-        // Master Data: Timetable mapped by Section
-        const sectionTimetables = {
-            A: {
-                Monday: {
-                    '08:30 - 09:50': { code: 'CS-301', name: 'Data Structures', room: 'Room 201', students: 45, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-                    '10:00 - 11:20': { code: 'CS-302', name: 'Web Dev', room: 'Lab 3', students: 42, color: 'bg-violet-100 border-violet-300 text-violet-800' },
-                    '01:30 - 02:50': { code: 'CS-303', name: 'Algorithms', room: 'Room 105', students: 38, color: 'bg-emerald-100 border-emerald-300 text-emerald-800' },
-                },
-                Tuesday: {
-                    '08:30 - 09:50': { code: 'CS-304', name: 'Databases', room: 'Room 302', students: 31, color: 'bg-orange-100 border-orange-300 text-orange-800' },
-                    '11:30 - 12:50': { code: 'CS-301', name: 'Data Structures', room: 'Room 201', students: 45, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-                },
-                Wednesday: {
-                    '10:00 - 11:20': { code: 'CS-302', name: 'Web Dev', room: 'Lab 3', students: 42, color: 'bg-violet-100 border-violet-300 text-violet-800' },
-                    '01:30 - 02:50': { code: 'CS-303', name: 'Algorithms', room: 'Room 105', students: 38, color: 'bg-emerald-100 border-emerald-300 text-emerald-800' },
-                },
-                Thursday: {
-                    '08:30 - 09:50': { code: 'CS-304', name: 'Databases', room: 'Room 302', students: 31, color: 'bg-orange-100 border-orange-300 text-orange-800' },
-                    '03:00 - 04:20': { code: 'CS-301', name: 'Data Structures', room: 'Room 201', students: 45, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-                },
-                Friday: {
-                    '10:00 - 11:20': { code: 'CS-303', name: 'Algorithms', room: 'Room 105', students: 38, color: 'bg-emerald-100 border-emerald-300 text-emerald-800' },
-                }
-            },
-            B: {
-                Monday: {
-                    '10:00 - 11:20': { code: 'CS-301', name: 'Data Structures', room: 'Room 201', students: 40, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-                    '01:30 - 02:50': { code: 'CS-302', name: 'Web Dev', room: 'Lab 3', students: 35, color: 'bg-violet-100 border-violet-300 text-violet-800' },
-                },
-                Tuesday: {
-                    '08:30 - 09:50': { code: 'CS-303', name: 'Algorithms', room: 'Room 105', students: 42, color: 'bg-emerald-100 border-emerald-300 text-emerald-800' },
-                },
-                Wednesday: {
-                    '11:30 - 12:50': { code: 'CS-304', name: 'Databases', room: 'Room 302', students: 38, color: 'bg-orange-100 border-orange-300 text-orange-800' },
-                },
-                Thursday: {
-                    '10:00 - 11:20': { code: 'CS-301', name: 'Data Structures', room: 'Room 201', students: 40, color: 'bg-blue-100 border-blue-300 text-blue-800' },
-                },
-                Friday: {
-                    '08:30 - 09:50': { code: 'CS-302', name: 'Web Dev', room: 'Lab 3', students: 35, color: 'bg-violet-100 border-violet-300 text-violet-800' },
-                }
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    useEffect(() => {
+        const fetchTimetable = async () => {
+            try {
+                const res = await api.get('/timetables/my-timetable');
+                setTimetable(res.data);
+            } catch (error) {
+                console.error("Failed to fetch timetable", error);
+            } finally {
+                setLoading(false);
             }
         };
+        fetchTimetable();
+    }, []);
 
-        // Get current timetable based on selected section (fallback to A if section not found)
-        const currentTimetable = sectionTimetables[selectedSection] || sectionTimetables['A'];
+    // Extract unique programs and batches for the dropdowns
+    const uniquePrograms = ['All', ...new Set(timetable.map(t => t.programName))];
+    const uniqueBatches = ['All', ...new Set(timetable.map(t => t.batchName))];
 
-        return (
-            <Layout title="Class Timetable" subtitle="View your weekly teaching schedule">
-                <div className="space-y-6 pb-8">
+    // Filter the schedule based on dropdowns
+    const filteredTimetable = timetable.filter(t => {
+        const matchProgram = selectedProgram === 'All' || t.programName === selectedProgram;
+        const matchBatch = selectedBatch === 'All' || t.batchName === selectedBatch;
+        return matchProgram && matchBatch;
+    });
 
-                    {/* Control Panel */}
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                                <Calendar className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-gray-900">Weekly Schedule</h2>
-                                <p className="text-sm text-gray-500">Fall 2024 Timetable</p>
-                            </div>
+    if (loading) return <Layout title="Class Timetable"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
+
+    return (
+        <Layout title="Class Timetable" subtitle="View your weekly teaching schedule">
+            <div className="space-y-6 pb-8 max-w-[1400px] mx-auto">
+
+                {/* Control Panel */}
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                            <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Weekly Schedule</h2>
+                            <p className="text-sm text-gray-500">Your assigned classes</p>
+                        </div>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                            <Filter className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm font-bold text-gray-700">Program:</span>
+                            <select value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)} className="bg-transparent text-sm font-semibold text-gray-800 outline-none cursor-pointer">
+                                {uniquePrograms.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
                         </div>
 
-                        {/* Section Dropdown */}
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm font-bold text-gray-700 whitespace-nowrap flex items-center gap-1">
-                                <Filter className="w-4 h-4" /> Section:
-                            </label>
-                            <select
-                                value={selectedSection}
-                                onChange={(e) => setSelectedSection(e.target.value)}
-                                className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer w-28"
-                            >
-                                {['A', 'B'].map(sec => (
-                                    <option key={sec} value={sec}>Section {sec}</option>
-                                ))}
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                            <span className="text-sm font-bold text-gray-700">Batch:</span>
+                            <select value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)} className="bg-transparent text-sm font-semibold text-gray-800 outline-none cursor-pointer">
+                                {uniqueBatches.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    {/* Timetable Container */}
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <div className="min-w-[900px]">
+                {/* Timetable Grid */}
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[1000px]">
 
-                                {/* Table Header (Time Slots) */}
-                                <div className="grid grid-cols-6 border-b border-gray-200 bg-slate-800 text-white">
-                                    <div className="p-4 flex items-center justify-center font-bold text-sm tracking-wider uppercase border-r border-slate-700">
-                                        Day / Time
+                            {/* Header */}
+                            <div
+                                className="grid bg-slate-800 text-white border-b border-slate-700"
+                                style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(120px, 1fr))` }}
+                            >
+                                <div className="p-4 flex items-center justify-center font-bold text-sm uppercase tracking-wider border-r border-slate-700">
+                                    Day / Time
+                                </div>
+                                {timeSlots.map((time, idx) => (
+                                    <div key={idx} className="p-4 text-center font-bold text-sm border-r border-slate-700 last:border-0 flex flex-col items-center justify-center gap-1">
+                                        <Clock className="w-3.5 h-3.5 text-slate-400" />{time}
                                     </div>
-                                    {timeSlots.map((time, idx) => (
-                                        <div key={idx} className="p-4 text-center font-bold text-sm tracking-wide border-r border-slate-700 last:border-0 flex items-center justify-center gap-1.5">
-                                            <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                            {time}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Table Body (Days and Classes) */}
-                                <div className="divide-y divide-gray-200">
-                                    {days.map((day, dayIdx) => (
-                                        <div key={day} className="grid grid-cols-6 group hover:bg-gray-50 transition-colors">
-
-                                            {/* Day Label (Left Column) */}
-                                            <div className={`p-4 flex items-center justify-center font-bold text-sm border-r border-gray-200 
-                                                ${dayIdx % 2 === 0 ? 'bg-white text-indigo-700' : 'bg-slate-50 text-indigo-700'}`}>
-                                                {day}
-                                            </div>
-
-                                            {/* Time Slot Cells */}
-                                            {timeSlots.map((time) => {
-                                                const classData = currentTimetable[day]?.[time];
-
-                                                return (
-                                                    <div key={time} className="p-1.5 border-r border-gray-200 last:border-0 relative">
-                                                        {classData ? (
-                                                            <div className={`h-full w-full rounded-xl border-l-4 p-2.5 flex flex-col justify-between shadow-sm transition-transform hover:scale-[1.02] cursor-pointer ${classData.color}`}>
-                                                                <div>
-                                                                    <div className="flex items-center justify-between gap-1 mb-1">
-                                                                        <span className="text-[10px] font-black uppercase opacity-80">{classData.code}</span>
-                                                                    </div>
-                                                                    <h3 className="text-xs font-bold leading-tight line-clamp-2">{classData.name}</h3>
-                                                                </div>
-
-                                                                <div className="mt-2 space-y-0.5">
-                                                                    <p className="text-[10px] font-semibold flex items-center gap-1 opacity-90">
-                                                                        <MapPin className="w-3 h-3" /> {classData.room}
-                                                                    </p>
-                                                                    <p className="text-[10px] font-medium flex items-center gap-1 opacity-75">
-                                                                        <Users className="w-3 h-3" /> {classData.students} Students
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            // Empty slot
-                                                            <div className="h-full w-full rounded-xl border border-dashed border-gray-200 flex items-center justify-center min-h-[100px]">
-                                                                <span className="text-[10px] font-semibold text-gray-300 uppercase">Free</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ))}
-                                </div>
-
+                                ))}
                             </div>
+
+                            {/* Body */}
+                            <div className="divide-y divide-gray-200">
+                                {days.map((day) => (
+                                    <div
+                                        key={day}
+                                        className="grid"
+                                        style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(120px, 1fr))` }}
+                                    >
+                                        {/* Day Label */}
+                                        <div className="p-4 flex items-center justify-center font-bold text-sm bg-slate-50 text-slate-700 border-r border-gray-200">
+                                            {day}
+                                        </div>
+
+                                        {/* Time Slot Cells */}
+                                        {timeSlots.map((time) => {
+                                            const cls = filteredTimetable.find(t => t.dayOfWeek === day && t.timeSlot === time);
+
+                                            return (
+                                                <div key={time} className="p-1.5 border-r border-gray-200 last:border-0 relative min-h-[100px]">
+                                                    {cls ? (
+                                                        <div className="h-full w-full rounded-xl border-l-4 border-indigo-500 bg-indigo-50 p-2.5 flex flex-col justify-center shadow-sm relative overflow-hidden group hover:bg-indigo-100 transition-colors">
+                                                            <span className="text-[10px] font-black uppercase text-indigo-700 opacity-80 truncate">
+                                                                {cls.courseCode}
+                                                            </span>
+
+                                                            <h3 className="text-xs font-bold text-indigo-900 leading-tight mt-1 line-clamp-2">
+                                                                {cls.courseName}
+                                                            </h3>
+
+                                                            <div className="mt-2 space-y-0.5">
+                                                                <p className="text-[10px] font-semibold text-indigo-700 flex items-center gap-1 truncate">
+                                                                    <Users className="w-3 h-3 shrink-0" /> {cls.programName} ({cls.batchName})
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-indigo-500 flex items-center gap-1 truncate">
+                                                                    <MapPin className="w-3 h-3 shrink-0" /> {cls.roomName} • Sec {cls.section}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-full w-full rounded-xl border border-dashed border-gray-200 flex items-center justify-center">
+                                                            <span className="text-[10px] font-semibold text-gray-300 uppercase">Free</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+
                         </div>
                     </div>
-
                 </div>
-            </Layout>
-        );
-    };
 
-    export default Classes;
+            </div>
+        </Layout>
+    );
+};
+
+export default Classes;

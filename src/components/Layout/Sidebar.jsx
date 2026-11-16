@@ -46,7 +46,6 @@ const menuConfig = {
             children: [
                 { icon: Power, label: 'Manage Registration', path: '/systemadmin/registration/manage' },
                 { icon: GraduationCap, label: '1st Sem Auto-Assign', path: '/systemadmin/registration/first-semester' },
-<<<<<<< HEAD
                 { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
             ]
         },
@@ -56,9 +55,6 @@ const menuConfig = {
             children: [
                 { icon: Lock, label: 'Change Password', path: '/systemadmin/settings/password' },
                 { icon: Image, label: 'Profile Image', path: '/systemadmin/settings/profile' },
-=======
-                 { icon: BookOpen, label: 'Student Registrations', path: '/systemadmin/registration/students' },
->>>>>>> 48ee14e4b0486ed9bbb0f38b00f1d40965b2e1da
             ]
         },
     ],
@@ -308,7 +304,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             {/* Top Logo & Collapse Section */}
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-5 h-[100px] shrink-0 border-b border-slate-100 relative`}>
                 <div className="flex items-center gap-2">
-
                     {/* Transparent Logo */}
                     <div className="flex items-center justify-center shrink-0">
                         <img src={unilogo} alt="University Logo" className={isCollapsed ? "w-10 h-10 object-contain" : "w-[60px] h-auto object-contain"} />
