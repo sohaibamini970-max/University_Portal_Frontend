@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
-
 export const useAuth = () => useContext(AuthContext);
 
 export const api = axios.create({
@@ -20,12 +19,13 @@ api.interceptors.request.use(
 );
 
 export const AuthProvider = ({ children }) => {
-    // 👇 INITIALIZE SYNCHRONOUSLY FROM LOCALSTORAGE
+    // 1. Initialize synchronously from localStorage
     const [user, setUser] = useState(() => {
         const savedUser = localStorage.getItem('user');
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
+    // 2. Loading should be false since we initialize synchronously
     const [loading, setLoading] = useState(false);
 
     const login = async (email, password) => {
@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{ user, login, loginWithToken, logout, loading }}>
-            {children}
+            {/* 👇 Only render children when loading is done (synchronous here, so instant) */}
+            {!loading && children}
         </AuthContext.Provider>
     );
 };

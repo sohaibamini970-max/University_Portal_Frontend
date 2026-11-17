@@ -229,18 +229,21 @@ const ManageTimetable = () => {
                     </div>
                 )}
 
-                {/* 👇 TIMETABLE GRID - STRICT COLUMN ENFORCEMENT 👇 */}
+                {/* 👇 TIMETABLE GRID - FIXED HEADER 👇 */}
                 <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <div className="min-w-[1000px]">
+                        {/* Set a strict minimum width based on number of slots to prevent text squishing */}
+                        <div style={{ minWidth: `${Math.max(1000, timeSlots.length * 150 + 120)}px` }}>
                             {/* Table Header */}
                             <div
                                 className="grid bg-slate-800 text-white border-b border-slate-700"
-                                style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(140px, 1fr))` }}
+                                style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(150px, 1fr))` }}
                             >
-                                <div className="p-4 flex items-center justify-center font-bold text-sm uppercase tracking-wider border-r border-slate-700">Day / Time</div>
+                                <div className="p-4 flex items-center justify-center font-bold text-sm uppercase tracking-wider border-r border-slate-700 shrink-0">
+                                    Day / Time
+                                </div>
                                 {timeSlots.map((time, idx) => (
-                                    <div key={idx} className="p-4 text-center font-bold text-sm border-r border-slate-700 last:border-0 flex flex-col items-center justify-center gap-1">
+                                    <div key={idx} className="p-4 text-center font-bold text-sm border-r border-slate-700 last:border-0 flex flex-col items-center justify-center gap-1 shrink-0 whitespace-nowrap">
                                         <Clock className="w-3.5 h-3.5 text-slate-400" />{time}
                                     </div>
                                 ))}
@@ -252,9 +255,9 @@ const ManageTimetable = () => {
                                     <div
                                         key={day}
                                         className="grid"
-                                        style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(140px, 1fr))` }}
+                                        style={{ gridTemplateColumns: `120px repeat(${timeSlots.length}, minmax(150px, 1fr))` }}
                                     >
-                                        <div className="p-4 flex items-center justify-center font-bold text-sm bg-slate-50 text-slate-700 border-r border-gray-200">{day}</div>
+                                        <div className="p-4 flex items-center justify-center font-bold text-sm bg-slate-50 text-slate-700 border-r border-gray-200 shrink-0">{day}</div>
 
                                         {timeSlots.map((time) => {
                                             const cls = timetable.find(t => t.dayOfWeek === day && t.timeSlot === time);
@@ -266,7 +269,6 @@ const ManageTimetable = () => {
                                                     className="p-2 border-r border-gray-200 last:border-0 relative group cursor-pointer min-h-[120px]"
                                                 >
                                                     {cls ? (
-                                                        /* 👇 LOCKED SLOT CARD - PREVENTS OVERFLOW 👇 */
                                                         <div className="h-full w-full rounded-xl border-l-4 border-indigo-500 bg-indigo-50 p-3 flex flex-col justify-center shadow-sm relative overflow-hidden group-hover:bg-indigo-100 transition-colors">
                                                             <div className="absolute top-2 right-2 text-indigo-300">
                                                                 <Lock className="w-4 h-4" />
@@ -274,22 +276,17 @@ const ManageTimetable = () => {
                                                             <span className="text-[10px] font-black uppercase text-indigo-700 opacity-80 truncate">
                                                                 {cls.courseCode}
                                                             </span>
-
-                                                            {/* break-words keeps long titles inside the box */}
                                                             <h3 className="text-sm font-bold text-indigo-900 leading-tight mt-1 pr-5 break-words line-clamp-3">
                                                                 {cls.courseName}
                                                             </h3>
-
                                                             <p className="text-xs font-semibold text-indigo-700 mt-1 truncate">
                                                                 {cls.teacherName}
                                                             </p>
-
                                                             <p className="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 truncate">
                                                                 <MapPin className="w-3 h-3 shrink-0" /> {cls.roomName}
                                                             </p>
                                                         </div>
                                                     ) : (
-                                                        /* 👇 AVAILABLE SLOT CARD 👇 */
                                                         <div className="h-full w-full rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Plus className="w-6 h-6 mb-1 text-emerald-500" />
                                                             <span className="text-xs font-bold text-emerald-600">Available</span>

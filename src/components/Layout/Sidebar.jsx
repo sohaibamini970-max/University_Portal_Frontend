@@ -74,7 +74,13 @@ const menuConfig = {
             children: [
                 { icon: UserCheck, label: 'Assign Courses', path: '/admin/assign-courses' },
                 { icon: Calendar, label: 'Manage Timetable', path: '/admin/timetable' },
+                { icon: Calendar, label: 'Manage Attendance', path: '/admin/attendance' },
                 { icon: Building2, label: 'Rooms & Labs', path: '/admin/rooms' },
+                {
+                    icon: CalendarDays,
+                    label: 'Academic Calendar',
+                    path: '/admin/calendar'
+                },
             ],
         },
         {

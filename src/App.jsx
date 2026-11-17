@@ -55,6 +55,8 @@ import AcademicRecords from './pages/admin/students/AcademicRecords';
 import AssignCourses from './pages/admin/AssignCourses';
 import ManageTimetable from './pages/admin/ManageTimetable';
 import ManageRooms from './pages/admin/ManageRooms';
+import ManageCalendar from './pages/admin/ManageCalender';
+import AdminAttendance from './pages/admin/AdminAttendance'
 
 // Student
 import StudentDashboard from './pages/student/Dashboard';
@@ -213,6 +215,8 @@ function App() {
                         <Route path="active" element={<ActiveStudents />} />
                         <Route path="records" element={<AcademicRecords />} />
                     </Route>
+                    <Route path="/admin/calendar" element={<ProtectedRoute allowedRole="department_admin"><ManageCalendar /></ProtectedRoute>} />
+                    <Route path="/admin/attendance" element={<ProtectedRoute allowedRole="department_admin"><AdminAttendance /></ProtectedRoute>} />
                     <Route path="/admin/assign-courses" element={<ProtectedRoute allowedRole="department_admin"><AssignCourses /></ProtectedRoute>} />
                     <Route path="/admin/timetable" element={<ProtectedRoute allowedRole="department_admin"><ManageTimetable /></ProtectedRoute>} />
                     <Route path="/admin/rooms" element={<ProtectedRoute allowedRole="department_admin"><ManageRooms /></ProtectedRoute>} />

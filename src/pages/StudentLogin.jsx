@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../context/AuthContext'; // 👈 Import api
-import { GraduationCap, User, Lock, ArrowRight, Loader2 } from 'lucide-react'; // 👈 Added User & Loader2
+import { api } from '../context/AuthContext'; // 👈 Make sure you import 'api'
+import { GraduationCap, User, Lock, ArrowRight, Loader2 } from 'lucide-react';
 
 const StudentLogin = () => {
-    const [rollNo, setRollNo] = useState(''); // 👈 Changed 'email' to 'rollNo'
+    const [rollNo, setRollNo] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-    const { loginWithToken } = useAuth(); // 👈 Use loginWithToken
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -19,21 +16,17 @@ const StudentLogin = () => {
         setIsLoading(true);
 
         try {
-            // 👇 Call the custom student login endpoint
-            const res = await api.post('/auth/student-login', {
-                rollNo: rollNo,
-                password: password
-            });
+            const res = await api.post('/auth/student-login', { rollNo, password });
 
-            // Save the token and user to context
-            loginWithToken(res.data.user, res.data.token);
+            // 👇 Save directly to localStorage
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
 
-            // Navigate to dashboard
-            navigate('/student/dashboard');
-            window.location.reload(); // Force reload to ensure context is fully updated
+            // 👇 FORCE HARD RELOAD instead of navigate()
+            window.location.href = '/student/dashboard';
 
         } catch (err) {
-            setError(err.response?.data?.message || "Invalid Roll Number or password");
+            setError(err.response?.data?.message || err.response?.data?.details || "Invalid Roll Number or password");
         } finally {
             setIsLoading(false);
         }
@@ -87,22 +80,12 @@ const StudentLogin = () => {
                         className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
                     >
                         {isLoading ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" /> Authenticating...
-                            </>
+                            <><Loader2 className="w-5 h-5 animate-spin" /> Authenticating...</>
                         ) : (
-                            <>
-                                Sign In <ArrowRight className="w-4 h-4" />
-                            </>
+                            <>Sign In <ArrowRight className="w-4 h-4" /></>
                         )}
                     </button>
                 </form>
-
-                <div className="mt-6 text-center">
-                    <button onClick={() => navigate('/')} className="text-sm text-slate-500 hover:text-slate-800">
-                        ← Back to Portals
-                    </button>
-                </div>
             </div>
         </div>
     );
