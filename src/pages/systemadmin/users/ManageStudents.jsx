@@ -1,172 +1,477 @@
-import React, { useState, useEffect } from 'react';
-import DataTable from '../../../components/common/DataTable';
-import { Search, Filter, ShieldCheck, ShieldAlert, Key, Loader2 } from 'lucide-react';
-import { api } from '../../../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    Search, Eye, Pencil, Key, X, Loader2, ShieldCheck, ShieldAlert,
+    ChevronLeft, ChevronRight
+} from 'lucide-react';
+import { api, useAuth } from '../../../context/AuthContext';
+
+const PAGE_SIZE = 10;
+const FULL_ADMIN_ROLES = ['superadmin', 'systemadmin'];
+
+const inputClass =
+    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
+
+const Modal = ({ title, subtitle, onClose, children, width = 'max-w-lg' }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div className={`bg-white rounded-2xl shadow-2xl w-full ${width} max-h-[90vh] overflow-y-auto`}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                    {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+                </div>
+                <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200">
+                    <X className="w-5 h-5 text-gray-500" />
+                </button>
+            </div>
+            <div className="p-5">{children}</div>
+        </div>
+    </div>
+);
+
+const Field = ({ label, value }) => (
+    <div>
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-sm text-gray-900 mt-0.5">{value || '—'}</p>
+    </div>
+);
 
 const ManageStudents = () => {
-    const [searchQuery, setSearchQuery] = useState('');
+    const { user } = useAuth(); // adjust to however your AuthContext exposes the logged-in user
+    const canManageAccounts = FULL_ADMIN_ROLES.includes(user?.role);
+
+    // List state
     const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [page, setPage] = useState(1);
+    const [searchInput, setSearchInput] = useState('');
+    const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [pageError, setPageError] = useState('');
 
-    // Modal State for Password Reset
-    const [passwordModal, setPasswordModal] = useState(null);
+    // Modal state
+    const [viewing, setViewing] = useState(null);       // { student, registeredCourses }
+    const [editing, setEditing] = useState(null);       // editable form state
+    const [editError, setEditError] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [passwordTarget, setPasswordTarget] = useState(null);
     const [newPassword, setNewPassword] = useState('');
-    const [isResetting, setIsResetting] = useState(false);
+    const [resetting, setResetting] = useState(false);
 
-    const fetchStudents = async () => {
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearch(searchInput.trim());
+            setPage(1);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const fetchStudents = useCallback(async () => {
         setLoading(true);
+        setPageError('');
         try {
-            const res = await api.get('/students/all');
-            setStudents(res.data);
-        } catch (error) {
-            console.error(error);
+            const params = new URLSearchParams({
+                page: String(page),
+                pageSize: String(PAGE_SIZE),
+                search
+            });
+            const res = await api.get(`/students/admin?${params.toString()}`);
+            setStudents(res.data.items);
+            setTotal(res.data.total);
+            setTotalPages(Math.max(1, res.data.totalPages));
+        } catch (err) {
+            setPageError(err.response?.data?.message || 'Failed to load students.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, search]);
 
-    useEffect(() => { fetchStudents(); }, []);
+    useEffect(() => {
+        fetchStudents();
+    }, [fetchStudents]);
 
-    const toggleStatus = async (id, currentStatus) => {
+    // READ
+    const openView = async (student) => {
+        setViewing({ student: null, registeredCourses: [] });
         try {
-            await api.put(`/students/${id}/toggle-status`, { isActive: !currentStatus });
-            fetchStudents();
-        } catch (error) {
-            alert("Failed to update status");
+            const res = await api.get(`/students/admin/${student.id}`);
+            setViewing(res.data);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to load student details.');
+            setViewing(null);
         }
     };
 
+    // UPDATE
+    const openEdit = (s) => {
+        setEditError('');
+        setEditing({
+            id: s.id,
+            rollNo: s.rollNo,
+            email: s.email,
+            fullName: s.fullName ?? '',
+            fatherName: s.fatherName ?? '',
+            phone: s.phone ?? '',
+            section: s.section ?? ''
+        });
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setEditError('');
+        try {
+            await api.put(`/students/admin/${editing.id}`, {
+                fullName: editing.fullName,
+                fatherName: editing.fatherName,
+                phone: editing.phone,
+                section: editing.section
+            });
+            setEditing(null);
+            fetchStudents();
+        } catch (err) {
+            setEditError(err.response?.data?.message || 'Failed to update student.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ACTIVATE / DEACTIVATE
+    const handleToggleStatus = async (s) => {
+        try {
+            await api.put(`/students/${s.id}/toggle-status`, { isActive: !s.isActive });
+            fetchStudents();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update status.');
+        }
+    };
+
+    // PASSWORD RESET
     const handlePasswordReset = async (e) => {
         e.preventDefault();
-        setIsResetting(true);
+        setResetting(true);
         try {
-            await api.put(`/students/${passwordModal.profileId}/reset-password`, { password: newPassword });
-            setPasswordModal(null);
+            await api.put(`/students/${passwordTarget.profileId}/reset-password`, { password: newPassword });
+            setPasswordTarget(null);
             setNewPassword('');
-            alert("Password updated successfully.");
-        } catch (error) {
-            alert(error.response?.data?.message || "Failed to update password");
+            alert('Password updated successfully.');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update password.');
         } finally {
-            setIsResetting(false);
+            setResetting(false);
         }
     };
-
-    const filteredData = students.filter(s =>
-        s.profile?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.profile?.rollNo?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const columns = [
-        {
-            key: 'name',
-            label: 'Student Name',
-            render: (row) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
-                        {row.profile?.fullName?.charAt(0) || 'S'}
-                    </div>
-                    <div>
-                        <p className="font-bold text-gray-900 text-sm">{row.profile?.fullName}</p>
-                        <p className="text-xs text-gray-500">{row.profile?.rollNo}</p>
-                    </div>
-                </div>
-            )
-        },
-        { key: 'program', label: 'Program', render: (row) => row.program?.code },
-        { key: 'batch', label: 'Batch', render: (row) => row.batch?.name },
-        {
-            key: 'section', label: 'Section', render: (row) => (
-                <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-bold border border-slate-200">
-                    {row.section}
-                </span>
-            )
-        },
-        {
-            key: 'status',
-            label: 'Portal Status',
-            render: (row) => (
-                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold w-max ${row.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                    {row.isActive ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                    {row.isActive ? 'Active' : 'Inactive'}
-                </span>
-            )
-        },
-        {
-            key: 'action',
-            label: 'Actions',
-            render: (row) => (
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => toggleStatus(row.id, row.isActive)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${row.isActive
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                            }`}
-                    >
-                        {row.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
-                        onClick={() => setPasswordModal(row)}
-                        className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
-                        title="Reset Password"
-                    >
-                        <Key className="w-4 h-4" />
-                    </button>
-                </div>
-            )
-        }
-    ];
 
     return (
         <div className="space-y-4">
-            <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex flex-col lg:flex-row items-center gap-3">
-                <div className="relative w-full lg:w-72">
+            {/* Toolbar */}
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search by name or roll no..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Search by name, roll no, or email..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className={`${inputClass} pl-10 pr-4`}
                     />
+                </div>
+                <p className="text-sm text-gray-500">
+                    {total} student{total !== 1 ? 's' : ''}
+                </p>
+            </div>
+
+            {pageError && (
+                <div className="p-3 rounded-xl bg-red-50 text-red-700 text-sm">{pageError}</div>
+            )}
+
+            {/* Table */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="" >
+                            <tr className="bg-gray-100 bg-indigo-600 text-xs font-bold text-white uppercase tracking-wider">
+                                <th className="px-6 py-3">Student</th>
+                                <th className="px-6 py-3">Reg No.</th>
+                                <th className="px-6 py-3">Program</th>
+                                <th className="px-6 py-3">Batch</th>
+                                <th className="px-6 py-3">Section</th>
+                                <th className="px-6 py-3">Portal Status</th>
+                                <th className="px-6 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={7} className="p-10 text-center">
+                                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                                    </td>
+                                </tr>
+                            ) : students.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="p-10 text-center text-gray-500">
+                                        No students found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                students.map((s) => (
+                                    <tr key={s.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                                    {s.fullName?.charAt(0) ?? '?'}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900 text-sm">{s.fullName}</p>
+                                                    <p className="text-xs text-gray-500">{s.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-semibold text-blue-600">
+                                            {s.rollNo || '—'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{s.programCode}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{s.batchName}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-bold border border-slate-200">
+                                                {s.section}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold w-max ${s.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                                {s.isActive ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                                                {s.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => openView(s)}
+                                                    title="View"
+                                                    className="p-2 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openEdit(s)}
+                                                    title="Edit"
+                                                    className="p-2 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                {canManageAccounts && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleToggleStatus(s)}
+                                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg ${s.isActive
+                                                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                                                }`}
+                                                        >
+                                                            {s.isActive ? 'Deactivate' : 'Activate'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setPasswordTarget(s); setNewPassword(''); }}
+                                                            title="Reset Password"
+                                                            className="p-2 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100"
+                                                        >
+                                                            <Key className="w-4 h-4" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+                    <p className="text-xs text-gray-500">Page {page} of {totalPages}</p>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={page <= 1 || loading}
+                            onClick={() => setPage((p) => p - 1)}
+                            className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                            disabled={page >= totalPages || loading}
+                            onClick={() => setPage((p) => p + 1)}
+                            className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {loading ? (
-                <div className="text-center py-10 text-gray-500"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>
-            ) : (
-                <DataTable columns={columns} data={filteredData} itemsPerPage={5} />
+            {/* READ modal */}
+            {viewing && (
+                <Modal title="Student Details" onClose={() => setViewing(null)} width="max-w-2xl">
+                    {!viewing.student ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Full Name" value={viewing.student.fullName} />
+                                <Field label="Reg No." value={viewing.student.rollNo} />
+                                <Field label="Email" value={viewing.student.email} />
+                                <Field label="Phone" value={viewing.student.phone} />
+                                <Field label="Father's Name" value={viewing.student.fatherName} />
+                                <Field label="Portal Status" value={viewing.student.isActive ? 'Active' : 'Inactive'} />
+                                <Field label="Program" value={viewing.student.programName} />
+                                <Field label="Batch" value={viewing.student.batchName} />
+                                <Field label="Department" value={viewing.student.departmentName} />
+                                <Field label="Section" value={viewing.student.section} />
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    Registered Courses
+                                </h4>
+                                {viewing.registeredCourses.length === 0 ? (
+                                    <p className="text-sm text-gray-500">No courses registered.</p>
+                                ) : (
+                                    <ul className="divide-y divide-gray-100 border border-gray-100 rounded-xl">
+                                        {viewing.registeredCourses.map((c, i) => (
+                                            <li key={i} className="flex justify-between px-4 py-2.5 text-sm">
+                                                <span className="font-semibold text-gray-900">{c.code} - {c.name}</span>
+                                                <span className="text-gray-500">{c.creditHours} cr · Sec {c.section}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </Modal>
             )}
 
-            {/* Password Reset Modal */}
-            {passwordModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-                        <div className="p-5 border-b border-gray-200 bg-gray-50">
-                            <h2 className="text-lg font-bold text-gray-800">Set New Password</h2>
-                            <p className="text-xs text-gray-500">{passwordModal.profile?.fullName} ({passwordModal.profile?.rollNo})</p>
-                        </div>
-                        <form onSubmit={handlePasswordReset} className="p-6 space-y-4">
+            {/* UPDATE modal */}
+            {editing && (
+                <Modal title="Edit Student" onClose={() => setEditing(null)}>
+                    <form onSubmit={handleSave} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-xl text-sm">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">New Password</label>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Reg No. (locked)</p>
+                                <p className="font-semibold text-gray-700">{editing.rollNo || '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Email (locked)</p>
+                                <p className="font-semibold text-gray-700 truncate">{editing.email}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Full Name</label>
+                            <input
+                                required
+                                value={editing.fullName}
+                                onChange={(e) => setEditing({ ...editing, fullName: e.target.value })}
+                                className={inputClass}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Father's Name</label>
+                            <input
+                                value={editing.fatherName}
+                                onChange={(e) => setEditing({ ...editing, fatherName: e.target.value })}
+                                className={inputClass}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">Phone</label>
                                 <input
-                                    required
-                                    type="text"
-                                    value={newPassword}
-                                    onChange={e => setNewPassword(e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm"
-                                    placeholder="Enter new password"
+                                    value={editing.phone}
+                                    onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                                    className={inputClass}
                                 />
                             </div>
-                            <div className="pt-4 flex gap-3">
-                                <button type="button" onClick={() => setPasswordModal(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl">Cancel</button>
-                                <button type="submit" disabled={isResetting} className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-md flex justify-center items-center gap-2 disabled:opacity-50">
-                                    {isResetting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update'}
-                                </button>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">Section</label>
+                                <input
+                                    required
+                                    value={editing.section}
+                                    onChange={(e) => setEditing({ ...editing, section: e.target.value })}
+                                    className={inputClass}
+                                />
                             </div>
-                        </form>
-                    </div>
-                </div>
+                        </div>
+
+                        {editError && (
+                            <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{editError}</div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 flex items-center gap-2"
+                            >
+                                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
+
+            {/* PASSWORD RESET modal */}
+            {passwordTarget && (
+                <Modal
+                    title="Set New Password"
+                    subtitle={`${passwordTarget.fullName} (${passwordTarget.rollNo})`}
+                    onClose={() => !resetting && setPasswordTarget(null)}
+                    width="max-w-sm"
+                >
+                    <form onSubmit={handlePasswordReset} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">New Password</label>
+                            <input
+                                required
+                                type="text"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className={inputClass}
+                                placeholder="Enter new password"
+                            />
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setPasswordTarget(null)}
+                                disabled={resetting}
+                                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={resetting}
+                                className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-md flex justify-center items-center gap-2 disabled:opacity-50"
+                            >
+                                {resetting && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Update
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
             )}
         </div>
     );
