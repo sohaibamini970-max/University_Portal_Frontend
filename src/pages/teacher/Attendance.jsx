@@ -242,7 +242,7 @@ const MarkAttendance = () => {
                         ) : (
                             // Marking View
                             <>
-                                <div className="p-5 border-b border-gray-200 bg-indigo-600 text-white flex justify-between items-center">
+                                <div className="p-5 border-b border-gray-200 bg-gray-800 text-white flex justify-between items-center">
                                     <div>
                                         <h2 className="text-lg font-bold">Mark Attendance</h2>
                                         <p className="text-xs text-indigo-100">Week {selectedDateData.weekNumber} • Class {selectedDateData.classNumber} • {new Date(selectedDateData.date).toDateString()}</p>
@@ -270,26 +270,43 @@ const MarkAttendance = () => {
                                     <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-indigo-600" /></div>
                                 ) : (
                                     <>
-                                        <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
-                                            {filteredStudents.map(student => (
-                                                <div key={student.id} className={`p-4 flex items-center justify-between ${student.isPresent ? 'hover:bg-emerald-50' : 'bg-red-50'}`}>
-                                                    <div>
-                                                        <p className="font-bold text-gray-900">{student.name}</p>
-                                                        <p className="text-xs text-gray-500">{student.rollNo}</p>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => toggleAttendance(student.id)} className={`p-2 rounded-lg transition-colors ${student.isPresent ? 'text-emerald-600 bg-emerald-100' : 'text-gray-400 bg-gray-100'}`}>
-                                                            <CheckSquare className="w-5 h-5" />
-                                                        </button>
-                                                        <button onClick={() => toggleAttendance(student.id)} className={`p-2 rounded-lg transition-colors ${!student.isPresent ? 'text-red-600 bg-red-100' : 'text-gray-400 bg-gray-100'}`}>
-                                                            <XSquare className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {filteredStudents.length === 0 && (
-                                                <div className="p-8 text-center text-gray-500">No students found.</div>
-                                            )}
+                                        <div className="max-h-[500px] overflow-y-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-indigo-600 text-white uppercase text-xs sticky top-0">
+                                                    <tr>
+                                                        <th className="px-4 py-3 font-bold">Student Name</th>
+                                                        <th className="px-4 py-3 font-bold">Roll No.</th>
+                                                        <th className="px-4 py-3 font-bold text-center">Total Absents</th>
+                                                        <th className="px-4 py-3 font-bold text-center">Attendance</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {filteredStudents.map(student => (
+                                                        <tr key={student.id} className={student.isPresent ? 'hover:bg-emerald-50' : 'bg-red-50'}>
+                                                            <td className="px-4 py-3 font-bold text-gray-900">{student.name}</td>
+                                                            <td className="px-4 py-3 text-gray-500">{student.rollNo}</td>
+                                                            <td className="px-4 py-3 text-center font-semibold text-gray-700">
+                                                                {student.totalAttendedClasses ?? 0}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex justify-center gap-2">
+                                                                    <button onClick={() => toggleAttendance(student.id)} aria-label={`Mark ${student.name} present`} className={`p-2 rounded-lg transition-colors ${student.isPresent ? 'text-emerald-600 bg-emerald-100' : 'text-gray-400 bg-gray-100'}`}>
+                                                                        <CheckSquare className="w-5 h-5" />
+                                                                    </button>
+                                                                    <button onClick={() => toggleAttendance(student.id)} aria-label={`Mark ${student.name} absent`} className={`p-2 rounded-lg transition-colors ${!student.isPresent ? 'text-red-600 bg-red-100' : 'text-gray-400 bg-gray-100'}`}>
+                                                                        <XSquare className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {filteredStudents.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="4" className="p-8 text-center text-gray-500">No students found.</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
 
                                         <div className="p-5 bg-slate-50 border-t border-gray-200">
