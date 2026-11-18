@@ -92,7 +92,10 @@ const MarkAttendance = () => {
             setLoadingStudents(true);
             setErrorMessage('');
             try {
-                const res = await api.get(`/attendance/class-students?teacherAssignmentId=${selectedCourse}&date=${selectedDateData.date}`);
+                const res = await api.get(
+                    `/attendance/class-students?teacherAssignmentId=${selectedCourse}` +
+                    `&academicCalendarId=${selectedDateData.id}`
+                );
                 setStudents(res.data);
             } catch (error) {
                 console.error(error);
@@ -125,9 +128,13 @@ const MarkAttendance = () => {
         try {
             await api.post('/attendance/mark', {
                 teacherAssignmentId: parseInt(selectedCourse),
+                academicCalendarId: selectedDateData.id,   // ← NEW
                 date: selectedDateData.date,
-                remarks: remarks,
-                students: students.map(s => ({ studentProfileId: s.id, isPresent: s.isPresent }))
+                remarks,
+                students: students.map(s => ({
+                    studentProfileId: s.id,
+                    isPresent: s.isPresent
+                }))
             });
             setShowSuccessPopup(true);
         } catch (error) {
@@ -212,8 +219,14 @@ const MarkAttendance = () => {
                             >
                                 {filteredDatesForWeek.length === 0 && <option value="">No dates available</option>}
                                 {filteredDatesForWeek.map(d => (
+                                    // <option key={d.id} value={d.id}>
+                                    //     Class {d.classNumber} -
+                                    //     {new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ({d.dayName})
+                                    // </option>
                                     <option key={d.id} value={d.id}>
-                                        Class {d.classNumber} - {new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ({d.dayName})
+                                        Wk {d.weekNumber} · Class {d.classNumber}
+                                        {d.timeSlot ? ` · ${d.timeSlot}` : ''}
+                                        {' · '}{new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                                     </option>
                                 ))}
                             </select>

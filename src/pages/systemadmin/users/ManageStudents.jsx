@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Search, Eye, Pencil, Key, X, Loader2, ShieldCheck, ShieldAlert,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Zap, CheckCircle2
 } from 'lucide-react';
 import { api, useAuth } from '../../../context/AuthContext';
 
@@ -12,18 +12,21 @@ const inputClass =
     'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
 
 const Modal = ({ title, subtitle, onClose, children, width = 'max-w-lg' }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div className={`bg-white rounded-2xl shadow-2xl w-full ${width} max-h-[90vh] overflow-y-auto`}>
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                    {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+    <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        {/* Spacer that pushes the panel below the sticky header */}
+        <div className="flex min-h-full items-start justify-center p-4 pt-24">
+            <div className={`bg-white rounded-2xl shadow-2xl w-full ${width} max-h-[calc(100vh-8rem)] overflow-y-auto`}>
+                <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+                    </div>
+                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200">
+                        <X className="w-5 h-5 text-gray-500" />
+                    </button>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200">
-                    <X className="w-5 h-5 text-gray-500" />
-                </button>
+                <div className="p-5">{children}</div>
             </div>
-            <div className="p-5">{children}</div>
         </div>
     </div>
 );
@@ -58,6 +61,11 @@ const ManageStudents = () => {
     const [newPassword, setNewPassword] = useState('');
     const [resetting, setResetting] = useState(false);
 
+    // Bulk activate state
+    const [bulkActivating, setBulkActivating] = useState(false);
+    const [confirmBulkActivate, setConfirmBulkActivate] = useState(false);
+    const [bulkActivateResult, setBulkActivateResult] = useState(null);
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -66,6 +74,25 @@ const ManageStudents = () => {
         }, 400);
         return () => clearTimeout(timer);
     }, [searchInput]);
+
+    // BULK ACTIVATE
+    const handleBulkActivate = async () => {
+        setBulkActivating(true);
+        try {
+            const res = await api.post('/students/admin/bulk-activate', {
+                search: search || null
+            });
+            setConfirmBulkActivate(false);
+            setBulkActivateResult(res.data);
+            await fetchStudents();          // refresh the table
+            // auto-dismiss the toast after 4s
+            setTimeout(() => setBulkActivateResult(null), 4000);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to bulk activate students.');
+        } finally {
+            setBulkActivating(false);
+        }
+    };
 
     const fetchStudents = useCallback(async () => {
         setLoading(true);
@@ -180,6 +207,20 @@ const ManageStudents = () => {
                 <p className="text-sm text-gray-500">
                     {total} student{total !== 1 ? 's' : ''}
                 </p>
+                <div className="flex items-center gap-3">
+                    <p className="text-sm text-gray-500">
+                        {total} student{total !== 1 ? 's' : ''}
+                    </p>
+                    {canManageAccounts && (
+                        <button
+                            onClick={() => setConfirmBulkActivate(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 shadow-sm transition-colors"
+                        >
+                            <Zap className="w-4 h-4" />
+                            Activate All Inactive
+                        </button>
+                    )}
+                </div>
             </div>
 
             {pageError && (
@@ -313,7 +354,7 @@ const ManageStudents = () => {
 
             {/* READ modal */}
             {viewing && (
-                <Modal title="Student Details" onClose={() => setViewing(null)} width="max-w-2xl">
+                <Modal title="Student Details" onClose={() => setViewing(null)} width="max-w-2xl" className="mt-20" >
                     {!viewing.student ? (
                         <div className="flex justify-center py-8">
                             <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
@@ -472,6 +513,78 @@ const ManageStudents = () => {
                         </div>
                     </form>
                 </Modal>
+            )}
+            {/* BULK ACTIVATE CONFIRMATION */}
+            {confirmBulkActivate && (
+                <Modal
+                    title="Activate All Inactive Students?"
+                    subtitle={
+                        search
+                            ? `Only students matching "${search}" will be activated.`
+                            : 'All inactive students in the system will be activated.'
+                    }
+                    onClose={() => !bulkActivating && setConfirmBulkActivate(false)}
+                    width="max-w-md"
+                >
+                    <div className="space-y-4">
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                            <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-amber-800">
+                                <p className="font-bold mb-1">This grants portal access immediately.</p>
+                                <p>
+                                    Every inactive student{search ? ' matching your search' : ''} will be able to log in and
+                                    view their courses, timetable, and attendance.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmBulkActivate(false)}
+                                disabled={bulkActivating}
+                                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBulkActivate}
+                                disabled={bulkActivating}
+                                className="flex-1 py-2.5 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 shadow-md flex justify-center items-center gap-2 disabled:opacity-50"
+                            >
+                                {bulkActivating ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Activating...</>
+                                ) : (
+                                    <><Zap className="w-4 h-4" /> Yes, Activate All</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* SUCCESS TOAST */}
+            {bulkActivateResult && (
+                <div className="fixed bottom-6 right-6 z-[110] bg-white border border-emerald-200 rounded-2xl shadow-xl p-4 pr-10 max-w-sm animate-in fade-in slide-in-from-bottom-2">
+                    <button
+                        onClick={() => setBulkActivateResult(null)}
+                        className="absolute top-2 right-2 p-1 rounded-lg hover:bg-gray-100"
+                    >
+                        <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="flex items-start gap-3">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-bold text-gray-900">
+                                {bulkActivateResult.activatedCount > 0
+                                    ? `${bulkActivateResult.activatedCount} student${bulkActivateResult.activatedCount === 1 ? '' : 's'} activated`
+                                    : 'No inactive students'}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">{bulkActivateResult.message}</p>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

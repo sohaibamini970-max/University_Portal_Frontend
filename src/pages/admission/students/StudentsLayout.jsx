@@ -25,6 +25,7 @@ const StudentsLayout = () => {
                 >
                     <UserPlus className="w-4 h-4" /> Add New Student
                 </NavLink>
+                
             </div>
 
             <Outlet />

@@ -13,28 +13,34 @@ const Timetable = () => {
     useEffect(() => {
         const fetchTimetable = async () => {
             try {
-                const [timetableRes, slotsRes] = await Promise.all([
-                    api.get('/students/my-timetable'),
-                    api.get('/time-slots')
-                ]);
+                const timetableRes = await api.get('/students/my-timetable');
+                const scheduleData = timetableRes.data || [];
+                setSchedule(scheduleData);
 
-                setSchedule(timetableRes.data);
+                // 👇 Build time slots from the actual schedule — guaranteed match
+                const scheduleSlots = [...new Set(scheduleData.map(s => s.timeSlot))].sort();
 
-                // 👇 FALLBACK: If DB returns empty, use default slots
-                let formattedSlots = [];
-                if (slotsRes.data && slotsRes.data.length > 0) {
-                    formattedSlots = slotsRes.data.map(s => `${s.startTime} - ${s.endTime}`);
+                if (scheduleSlots.length > 0) {
+                    setTimeSlots(scheduleSlots);
                 } else {
-                    formattedSlots = [
-                        '08:30 - 09:50',
-                        '10:00 - 11:20',
-                        '11:30 - 12:50',
-                        '01:30 - 02:50',
-                        '03:00 - 04:20'
-                    ];
+                    // Only fall back when there's truly no schedule
+                    try {
+                        const slotsRes = await api.get('/time-slots');
+                        if (slotsRes.data?.length > 0) {
+                            setTimeSlots(slotsRes.data.map(s => `${s.startTime} - ${s.endTime}`).sort());
+                        } else {
+                            setTimeSlots([
+                                '08:00 - 08:50', '08:50 - 09:40', '09:40 - 10:30',
+                                '10:30 - 11:20', '11:20 - 12:10', '12:10 - 13:00'
+                            ]);
+                        }
+                    } catch {
+                        setTimeSlots([
+                            '08:00 - 08:50', '08:50 - 09:40', '09:40 - 10:30',
+                            '10:30 - 11:20', '11:20 - 12:10', '12:10 - 13:00'
+                        ]);
+                    }
                 }
-
-                setTimeSlots(formattedSlots.sort());
             } catch (error) {
                 console.error("Failed to load timetable", error);
             } finally {
@@ -43,7 +49,6 @@ const Timetable = () => {
         };
         fetchTimetable();
     }, []);
-
     if (loading) return <Layout title="Weekly Timetable"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
 
     return (

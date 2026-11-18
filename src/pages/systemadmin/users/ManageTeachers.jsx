@@ -25,19 +25,22 @@ const emptyForm = {
     isDean: false
 };
 
+// 👇 UPDATED: renders below sticky header, sits above header z-index
 const Modal = ({ title, subtitle, onClose, children, width = 'max-w-lg' }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div className={`bg-white rounded-2xl shadow-2xl w-full ${width} max-h-[90vh] overflow-y-auto`}>
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                    {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+    <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        <div className="flex min-h-full items-start justify-center p-4 pt-24">
+            <div className={`bg-white rounded-2xl shadow-2xl w-full ${width} max-h-[calc(100vh-8rem)] overflow-y-auto`}>
+                <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+                    </div>
+                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200">
+                        <X className="w-5 h-5 text-gray-500" />
+                    </button>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-200">
-                    <X className="w-5 h-5 text-gray-500" />
-                </button>
+                <div className="p-5">{children}</div>
             </div>
-            <div className="p-5">{children}</div>
         </div>
     </div>
 );
@@ -54,7 +57,7 @@ const Label = ({ children }) => (
 );
 
 const ManageTeachers = () => {
-    const { user } = useAuth(); // adjust to however your AuthContext exposes the logged-in user
+    const { user } = useAuth();
     const canChooseDepartment = FULL_ADMIN_ROLES.includes(user?.role);
     const canDelete = FULL_ADMIN_ROLES.includes(user?.role);
 
@@ -72,9 +75,9 @@ const ManageTeachers = () => {
     const [departments, setDepartments] = useState([]);
 
     // Modals
-    const [viewing, setViewing] = useState(null);     // { teacher, assignments }
+    const [viewing, setViewing] = useState(null);
     const [formOpen, setFormOpen] = useState(false);
-    const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
+    const [formMode, setFormMode] = useState('create');
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [formError, setFormError] = useState('');
@@ -82,6 +85,12 @@ const ManageTeachers = () => {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteError, setDeleteError] = useState('');
     const [deleting, setDeleting] = useState(false);
+
+    const [passwordOpen, setPasswordOpen] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordSaving, setPasswordSaving] = useState(false);
+    const [passwordSuccess, setPasswordSuccess] = useState('');
 
     // Debounce search
     useEffect(() => {
@@ -116,7 +125,6 @@ const ManageTeachers = () => {
         fetchTeachers();
     }, [fetchTeachers]);
 
-    // Load departments for the department dropdown
     useEffect(() => {
         if (!canChooseDepartment) return;
         api.get('/departments')
@@ -143,12 +151,45 @@ const ManageTeachers = () => {
         setForm(emptyForm);
         setFormError('');
         setFormOpen(true);
+        setPasswordOpen(false);
+        setNewPassword('');
+        setPasswordError('');
+        setPasswordSuccess('');
+    };
+
+    const handleUpdatePassword = async () => {
+        if (newPassword.length < 6) {
+            setPasswordError('Password must be at least 6 characters.');
+            return;
+        }
+        setPasswordSaving(true);
+        setPasswordError('');
+        setPasswordSuccess('');
+        try {
+            await api.put(`/teachers/admin/${editingId}/password`, {
+                newPassword
+            });
+            setPasswordSuccess('Password updated successfully.');
+            setNewPassword('');
+            setTimeout(() => {
+                setPasswordOpen(false);
+                setPasswordSuccess('');
+            }, 1500);
+        } catch (err) {
+            setPasswordError(err.response?.data?.message || 'Failed to update password.');
+        } finally {
+            setPasswordSaving(false);
+        }
     };
 
     // UPDATE
     const openEdit = (t) => {
         setFormMode('edit');
         setEditingId(t.id);
+        setPasswordOpen(false);
+        setNewPassword('');
+        setPasswordError('');
+        setPasswordSuccess('');
         setForm({
             ...emptyForm,
             fullName: t.fullName ?? '',
@@ -160,7 +201,8 @@ const ManageTeachers = () => {
             departmentId: t.departmentId ? String(t.departmentId) : '',
             isHod: !!t.isHod,
             isChairman: !!t.isChairman,
-            isDean: !!t.isDean
+            isDean: !!t.isDean,
+            
         });
         setFormError('');
         setFormOpen(true);
@@ -193,7 +235,6 @@ const ManageTeachers = () => {
                     ...sharedFields,
                     email: form.email.trim(),
                     password: form.password,
-                    // Department admins are assigned server-side, so send 0 for them
                     departmentId: canChooseDepartment ? Number(form.departmentId) : 0
                 });
             } else {
@@ -228,7 +269,6 @@ const ManageTeachers = () => {
             if (removedLastOnPage) setPage((p) => p - 1);
             else fetchTeachers();
         } catch (err) {
-            // 409 means the teacher still has assignments; the message explains that
             setDeleteError(err.response?.data?.message || 'Failed to delete teacher.');
         } finally {
             setDeleting(false);
@@ -461,6 +501,66 @@ const ManageTeachers = () => {
                                         <input type="text" required minLength={6} value={form.password} onChange={update('password')} className={inputClass} placeholder="Min 6 characters" />
                                     </div>
                                 </>
+                            )}
+
+                            {!isCreate && (
+                                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-600">Login Password</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                Reset the teacher's Supabase login password.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPasswordOpen((o) => !o);
+                                                setPasswordError('');
+                                                setPasswordSuccess('');
+                                                setNewPassword('');
+                                            }}
+                                            className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                                        >
+                                            {passwordOpen ? 'Cancel' : 'Change Password'}
+                                        </button>
+                                    </div>
+
+                                    {passwordOpen && (
+                                        <div className="mt-3 space-y-2">
+                                            <Label>New Password</Label>
+                                            <input
+                                                type="text"
+                                                minLength={6}
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="Min 6 characters"
+                                                className={inputClass}
+                                            />
+
+                                            {passwordError && (
+                                                <div className="p-2 rounded-lg bg-red-50 text-red-700 text-xs">
+                                                    {passwordError}
+                                                </div>
+                                            )}
+                                            {passwordSuccess && (
+                                                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs">
+                                                    {passwordSuccess}
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="button"
+                                                onClick={handleUpdatePassword}
+                                                disabled={passwordSaving || !newPassword}
+                                                className="w-full px-3 py-2 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2"
+                                            >
+                                                {passwordSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                                Update Password
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {!isCreate && (
