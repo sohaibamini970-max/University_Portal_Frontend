@@ -74,6 +74,8 @@ import AttendanceDetails from './pages/student/general/AttendanceDetails';
 import Announcements from './pages/student/general/Announcements';
 import AssessmentResult from './pages/student/exam/AssessmentResult';
 import StudentTranscript from './pages/student/exam/StudentTranscript';
+import StudentFeeStatus from './pages/student/fee/StudentFeeStatus';
+import ManageAssessment from './pages/admin/ManageAssessment';
 
 // Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -216,6 +218,7 @@ function App() {
                         <Route path="records" element={<AcademicRecords />} />
                     </Route>
                     <Route path="/admin/calendar" element={<ProtectedRoute allowedRole="department_admin"><ManageCalendar /></ProtectedRoute>} />
+                    <Route path="/admin/manageassessment" element={<ProtectedRoute allowedRole="department_admin"><ManageAssessment /></ProtectedRoute>} />
                     <Route path="/admin/attendance" element={<ProtectedRoute allowedRole="department_admin"><AdminAttendance /></ProtectedRoute>} />
                     <Route path="/admin/assign-courses" element={<ProtectedRoute allowedRole="department_admin"><AssignCourses /></ProtectedRoute>} />
                     <Route path="/admin/timetable" element={<ProtectedRoute allowedRole="department_admin"><ManageTimetable /></ProtectedRoute>} />
@@ -242,7 +245,7 @@ function App() {
                     <Route path="/student/attendance-details" element={<ProtectedRoute allowedRole="student"><AttendanceDetails /></ProtectedRoute>} />
                     <Route path="/student/assessment-result" element={<ProtectedRoute allowedRole="student"><AssessmentResult /></ProtectedRoute>} />
                     <Route path="/student/transcript" element={<ProtectedRoute allowedRole="student"><StudentTranscript /></ProtectedRoute>} />
-
+                    <Route path="/student/fee-status" element={<StudentFeeStatus />} />
                     {/* ================= TEACHER ================= */}
                     <Route path="/teacher/dashboard" element={<ProtectedRoute allowedRole="teacher"><TeacherDashboard /></ProtectedRoute>} />
                     <Route path="/teacher/classes" element={<ProtectedRoute allowedRole="teacher"><Classes /></ProtectedRoute>} />
@@ -263,7 +266,7 @@ function App() {
                     </Route>
 
                     {/* ================= FINANCE (Handled by Department Admin) ================= */}
-                    <Route path="/finance" element={<ProtectedRoute allowedRole="department_admin"><FinanceLayout /></ProtectedRoute>}>
+                    <Route path="/finance" element={<ProtectedRoute allowedRole="finance_admin"><FinanceLayout /></ProtectedRoute>}>
                         <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard" element={<FinanceDashboard />} />
                         <Route path="fees" element={<FeeManagement />} />

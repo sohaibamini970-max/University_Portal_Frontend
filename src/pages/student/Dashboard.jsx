@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
 import AnnouncementPopup from '../../components/common/AnnouncementPopup';
-import { api } from '../../context/AuthContext'; // 👈 Import API
+import { api } from '../../context/AuthContext';
 import {
-    Award, TrendingUp, DollarSign, BookOpen, Calendar, Clock, MapPin,
+    Award, TrendingUp, DollarSign, BookOpen, Calendar,
     ArrowRight, CheckCircle, Trophy, Download, Ticket, Bell, ChevronRight,
-    GraduationCap, Sparkles, ClipboardList, User, Hash, Users, Activity, BookMarked, Loader2
+    GraduationCap, ClipboardList, User, Hash, Users, Activity, Loader2
 } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, subtext, color, background, tag }) => (
@@ -20,9 +20,9 @@ const StatCard = ({ icon: Icon, label, value, subtext, color, background, tag })
                 </div>
                 <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/95">{tag}</span>
             </div>
-            <p className="mt-5 text-2xl font-bold tracking-tight">{value}</p>
+            <p className="mt-5 text-2xl font-bold tracking-tight truncate">{value}</p>
             <p className="mt-1 text-sm font-bold text-white">{label}</p>
-            <p className="mt-1 text-xs font-medium text-white/75">{subtext}</p>
+            <p className="mt-1 text-xs font-medium text-white/75 truncate">{subtext}</p>
         </div>
     </div>
 );
@@ -42,13 +42,37 @@ const SectionHeading = ({ title, subtitle, link, to, icon: Icon }) => (
 
 const StudentDashboard = () => {
     const [data, setData] = useState(null);
+    const [attendanceData, setAttendanceData] = useState([]);
+    const [feeData, setFeeData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
-                const res = await api.get('/students/dashboard-stats');
-                setData(res.data);
+                // Fetch all 3 APIs in parallel
+                const [dashRes, attRes, feeRes] = await Promise.allSettled([
+                    api.get('/students/dashboard-stats'),
+                    api.get('/attendance/my-attendance'),
+                    api.get('/student-fees/my')
+                ]);
+
+                // 1. Dashboard Stats (Required)
+                if (dashRes.status === 'fulfilled') {
+                    setData(dashRes.value.data);
+                } else {
+                    console.error("Dashboard stats failed", dashRes.reason);
+                }
+
+                // 2. Attendance (Optional - might be empty)
+                if (attRes.status === 'fulfilled') {
+                    setAttendanceData(attRes.value.data || []);
+                }
+
+                // 3. Fee Data (Optional - might be 404 if not generated yet)
+                if (feeRes.status === 'fulfilled') {
+                    setFeeData(feeRes.value.data);
+                }
+
             } catch (error) {
                 console.error("Failed to load dashboard", error);
             } finally {
@@ -58,23 +82,86 @@ const StudentDashboard = () => {
         fetchDashboard();
     }, []);
 
-    // Static Placeholders (As requested)
+    if (loading) return <Layout title="Student Dashboard"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
+    if (!data) return <Layout title="Student Dashboard"><div className="p-10 text-center text-red-500">Failed to load data.</div></Layout>;
+
+    // --- CALCULATE OVERALL ATTENDANCE ---
+    let totalClasses = 0;
+    let attendedClasses = 0;
+    attendanceData.forEach(c => {
+        totalClasses += c.totalClasses;
+        attendedClasses += c.attendedClasses;
+    });
+    const overallAttendancePercentage = totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0;
+
+    // --- CALCULATE FEE STATUS ---
+    let feeStatusValue = 'N/A';
+    let feeStatusSubtext = 'No fee record found';
+    let feeStatusBg = 'bg-gray-500'; // Default gray
+    let currentPayableAmount = 0;
+
+    if (feeData && feeData.fee) {
+        const { fee, installments } = feeData;
+        const unpaidInstallments = installments?.filter(i => i.status !== 'Paid') || [];
+        const nextInstallment = unpaidInstallments.length > 0 ? unpaidInstallments[0] : null;
+
+        currentPayableAmount = nextInstallment ? Number(nextInstallment.amount) : Number(fee.netPayable || 0);
+
+        if (fee.paymentStatus === 'Paid') {
+            feeStatusValue = 'Paid';
+            feeStatusSubtext = 'All dues cleared';
+            feeStatusBg = 'bg-emerald-600';
+        } else if (currentPayableAmount > 0) {
+            feeStatusValue = `PKR ${currentPayableAmount.toLocaleString()}`;
+            feeStatusSubtext = nextInstallment ? `Installment ${nextInstallment.installmentNumber} due` : 'Full semester due';
+            feeStatusBg = 'bg-[#EA580C]'; // Orange/Red
+        }
+    }
+
+    // Dynamic Stats Array
     const stats = [
         { icon: Award, label: 'Current CGPA', value: '3.75', subtext: 'Out of 4.00 · Strong performance', tag: 'Academic', background: 'bg-[#2563EB]' },
-        { icon: TrendingUp, label: 'Attendance', value: '92%', subtext: 'Excellent · Keep it consistent', tag: 'Attendance', background: 'bg-[#0F9D8A]' },
-        { icon: BookOpen, label: 'Enrolled Courses', value: data ? data.courses.length.toString().padStart(2, '0') : '00', subtext: 'Active courses this semester', tag: 'Learning', background: 'bg-[#7C3AED]' },
-        { icon: DollarSign, label: 'Fee Status', value: 'Pending', subtext: 'Module coming soon', tag: 'Finance', background: 'bg-[#EA580C]' }
+        {
+            icon: TrendingUp,
+            label: 'Attendance',
+            value: `${overallAttendancePercentage}%`,
+            subtext: totalClasses > 0 ? `${attendedClasses}/${totalClasses} classes attended` : 'No classes marked yet',
+            tag: 'Attendance',
+            background: overallAttendancePercentage >= 75 ? 'bg-[#0F9D8A]' : 'bg-red-500'
+        },
+        {
+            icon: BookOpen,
+            label: 'Enrolled Courses',
+            value: data.courses.length.toString().padStart(2, '0'),
+            subtext: 'Active courses this semester',
+            tag: 'Learning',
+            background: 'bg-[#7C3AED]'
+        },
+        {
+            icon: DollarSign,
+            label: 'Fee Status',
+            value: feeStatusValue,
+            subtext: feeStatusSubtext,
+            tag: 'Finance',
+            background: feeStatusBg
+        }
     ];
 
-    const attendance = [
-        { name: 'Attendance Tracking', attended: 0, total: 0, percentage: 0, color: 'bg-gray-300' },
-    ];
-
+    // Dynamic Announcements
     const announcements = [
         { title: 'Mid-term exams schedule released', description: 'Check the examination timetable for your courses.', time: '2 hours ago', type: 'exam', icon: Trophy },
-        { title: 'Fee voucher for Spring 2025 available', description: 'Your semester fee voucher is ready to download.', time: '1 day ago', type: 'fee', icon: DollarSign },
         { title: 'Course registration is now open', description: 'Complete your registration before November 30.', time: '2 days ago', type: 'registration', icon: BookOpen }
     ];
+
+    if (feeData && feeData.fee && feeData.fee.paymentStatus !== 'Paid') {
+        announcements.unshift({
+            title: 'Fee voucher available',
+            description: `You have an outstanding balance of PKR ${currentPayableAmount.toLocaleString()}.`,
+            time: 'Just now',
+            type: 'fee',
+            icon: DollarSign
+        });
+    }
 
     const quickActions = [
         { icon: Calendar, label: 'View Timetable', description: 'Check your weekly classes', path: '/student/timetable', color: 'bg-blue-100 text-blue-700', hover: 'hover:border-blue-300 hover:bg-blue-50' },
@@ -82,9 +169,6 @@ const StudentDashboard = () => {
         { icon: Ticket, label: 'Admit Card', description: 'Access examination details', path: '/student/admit-card', color: 'bg-violet-100 text-violet-700', hover: 'hover:border-violet-300 hover:bg-violet-50' },
         { icon: Trophy, label: 'Academic Results', description: 'View your examination results', path: '/student/results', color: 'bg-emerald-100 text-emerald-700', hover: 'hover:border-emerald-300 hover:bg-emerald-50' }
     ];
-
-    if (loading) return <Layout title="Student Dashboard"><div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div></Layout>;
-    if (!data) return <Layout title="Student Dashboard"><div className="p-10 text-center text-red-500">Failed to load data.</div></Layout>;
 
     return (
         <Layout title="Student Dashboard" subtitle={`Enrollment No: ${data.studentInfo.regNo} | Section ${data.studentInfo.section}`}>
@@ -170,13 +254,35 @@ const StudentDashboard = () => {
                         )}
                     </section>
 
-                    {/* My Attendance - Placeholder */}
+                    {/* My Attendance */}
                     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
                         <SectionHeading title="My Attendance" subtitle="Current semester overview" icon={Calendar} />
                         <div className="space-y-4">
-                            <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
-                                Attendance tracking will be available soon.
-                            </div>
+                            {attendanceData.length === 0 ? (
+                                <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200">
+                                    Attendance tracking will be available soon.
+                                </div>
+                            ) : (
+                                attendanceData.map((course) => (
+                                    <div key={course.courseCode} className="space-y-1.5">
+                                        <div className="flex justify-between text-xs font-bold">
+                                            <span className="text-slate-700">{course.courseCode}</span>
+                                            <span className={course.percentage >= 75 ? 'text-emerald-600' : 'text-red-500'}>
+                                                {course.percentage}%
+                                            </span>
+                                        </div>
+                                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full ${course.percentage >= 75 ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                                style={{ width: `${course.percentage}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 text-right">
+                                            {course.attendedClasses} / {course.totalClasses} classes
+                                        </p>
+                                    </div>
+                                ))
+                            )}
                         </div>
                         <Link to="/student/attendance" className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-gray-900">
                             View Detailed Attendance <ArrowRight className="h-4 w-4" />

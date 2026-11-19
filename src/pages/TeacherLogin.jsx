@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, api } from '../context/AuthContext'; // 👈 Import api and useAuth
+import { useAuth, api } from '../context/AuthContext';
 import { BookOpen, User, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import logo from '../assets/unilogo.png'
 
 const TeacherLogin = () => {
     const [employeeId, setEmployeeId] = useState('');
@@ -39,8 +40,8 @@ const TeacherLogin = () => {
             {/* ... Keep your JSX exactly the same ... */}
             <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-2xl mb-4 shadow-lg">
-                        <BookOpen className="w-8 h-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-32 h-32">
+                        <img src={logo} height="200px" width="200px" />
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900">Teacher Portal</h2>
                     <p className="text-sm text-slate-500">Sign in with your Employee ID.</p>

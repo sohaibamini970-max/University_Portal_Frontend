@@ -4,7 +4,7 @@ import unilogo from '../../assets/unilogo.png';
 import { useAuth } from '../../context/AuthContext';
 import {
     LayoutDashboard, Users, BookOpen, GraduationCap, Building2,
-    Settings, LogOut, ChevronLeft, ChevronRight, ChevronDown,
+    Settings, LogOut, ChevronLeft, ChevronRight, ChevronDown, Search,
     Calendar, FileText, UserCheck, ClipboardList, DollarSign,
     Award, Home, Map, Info, Download, Trophy, Laptop, Ticket, Bell,
     X, FileCheck, Megaphone, CalendarDays, ToggleRight,
@@ -76,11 +76,8 @@ const menuConfig = {
                 { icon: Calendar, label: 'Manage Timetable', path: '/admin/timetable' },
                 { icon: Calendar, label: 'Manage Attendance', path: '/admin/attendance' },
                 { icon: Building2, label: 'Rooms & Labs', path: '/admin/rooms' },
-                {
-                    icon: CalendarDays,
-                    label: 'Academic Calendar',
-                    path: '/admin/calendar'
-                },
+                { icon: CalendarDays, label: 'Academic Calendar', path: '/admin/calendar' },
+                { icon: CalendarDays, label: 'Manage Assessment', path: '/admin/manageassessment' },
             ],
         },
         {
@@ -193,7 +190,9 @@ const menuConfig = {
             label: 'Fee',
             children: [
                 { icon: Download, label: 'Download Voucher', path: '/student/fee-voucher' },
+                { icon: Search, label: 'Fee Status', path: '/student/fee-status' },
             ],
+
         },
         {
             icon: Award,
@@ -217,15 +216,7 @@ const menuConfig = {
     ],
 };
 
-const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
-    const location = useLocation();
-    const isChildActive = item.children.some(child => location.pathname === child.path);
-    const [open, setOpen] = useState(isChildActive);
-
-    useEffect(() => {
-        if (isChildActive) setOpen(true);
-    }, [isChildActive]);
-
+const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen, isOpen, onToggle }) => {
     const Icon = item.icon;
 
     if (isCollapsed) {
@@ -239,18 +230,18 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
     return (
         <div>
             <button
-                onClick={() => setOpen(!open)}
-                className={`w-full flex items-center justify-between px-4 py-3.5 text-[15px] font-bold rounded-lg transition-colors ${open ? 'text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                onClick={onToggle}
+                className={`w-full flex items-center justify-between px-4 py-3.5 text-[15px] font-bold rounded-lg transition-colors ${isOpen ? 'text-slate-900 bg-slate-50' : 'text-slate-700 hover:bg-slate-50'
                     }`}
             >
                 <span className="flex items-center gap-4">
                     <Icon className="w-5 h-5 shrink-0 text-slate-500" strokeWidth={2} />
                     <span>{item.label}</span>
                 </span>
-                <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} strokeWidth={2.5} />
+                <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} strokeWidth={2.5} />
             </button>
 
-            {open && (
+            {isOpen && (
                 <div className="ml-5 pl-4 border-l-2 border-slate-100 space-y-1 my-1">
                     {item.children.map((child) => {
                         const ChildIcon = child.icon;
@@ -280,9 +271,13 @@ const SidebarGroup = ({ item, isCollapsed, setIsMobileOpen }) => {
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // 1. State to track which dropdown is currently open
+    const [openMenuLabel, setOpenMenuLabel] = useState(null);
 
     let menuKey = user?.role;
-    if (user?.role === 'department_admin') {
+    if (user?.role === 'department_admin' || user?.role === 'finance_admin') {
         const deptCode = user.departmentCode || user.department?.code;
         if (deptCode === 'ADM') menuKey = 'admissions';
         else if (deptCode === 'FIN') menuKey = 'finance';
@@ -291,6 +286,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
     }
 
     const menuItems = menuConfig[menuKey] || [];
+
+    // Auto-open the dropdown that contains the active route
+    useEffect(() => {
+        const activeItem = menuItems.find(item =>
+            item.children?.some(child => location.pathname === child.path)
+        );
+        if (activeItem) {
+            setOpenMenuLabel(activeItem.label);
+        }
+    }, [location.pathname, menuItems]);
+
+    const handleToggleMenu = (label) => {
+        // If clicking the already open menu, close it. Otherwise, open the new one (closes others)
+        setOpenMenuLabel(prev => prev === label ? null : label);
+    };
 
     const handleLogout = () => {
         logout();
@@ -307,15 +317,24 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
         >
+            {/* 2. Floating Arrow Button for Collapsed State */}
+            {isCollapsed && !isMobileOpen && (
+                <button
+                    onClick={() => setIsCollapsed(false)}
+                    className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-slate-200 rounded-full items-center justify-center shadow-md text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors z-50"
+                    title="Expand Sidebar"
+                >
+                    <ChevronRight className="w-5 h-5" strokeWidth={2.5} />
+                </button>
+            )}
+
             {/* Top Logo & Collapse Section */}
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-5 h-[100px] shrink-0 border-b border-slate-100 relative`}>
                 <div className="flex items-center gap-2">
-                    {/* Transparent Logo */}
                     <div className="flex items-center justify-center shrink-0">
                         <img src={unilogo} alt="University Logo" className={isCollapsed ? "w-10 h-10 object-contain" : "w-[60px] h-auto object-contain"} />
                     </div>
 
-                    {/* Vertical Line & Text (Hidden when collapsed) */}
                     {!isCollapsed && !isMobileOpen && (
                         <div className="flex items-center gap-2">
                             <div className="h-10 w-[1px] bg-slate-300"></div>
@@ -327,13 +346,16 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                     )}
                 </div>
 
-                {/* Desktop Collapse Button (Top Right) */}
-                <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden md:flex text-slate-500 hover:text-slate-700 transition-colors p-1"
-                >
-                    {isCollapsed ? <ChevronRight className="w-6 h-6" strokeWidth={2} /> : <ChevronLeft className="w-8 h-8" strokeWidth={2} />}
-                </button>
+                {/* Desktop Collapse Button (Top Right) - Only visible when expanded */}
+                {!isCollapsed && (
+                    <button
+                        onClick={() => setIsCollapsed(true)}
+                        className="hidden md:flex text-slate-500 hover:text-slate-700 transition-colors p-1"
+                        title="Collapse Sidebar"
+                    >
+                        <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+                    </button>
+                )}
 
                 {/* Mobile Close Button */}
                 <button
@@ -348,7 +370,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
                 {menuItems.map((item, idx) =>
                     item.children ? (
-                        <SidebarGroup key={idx} item={item} isCollapsed={isCollapsed && !isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+                        <SidebarGroup
+                            key={idx}
+                            item={item}
+                            isCollapsed={isCollapsed && !isMobileOpen}
+                            setIsMobileOpen={setIsMobileOpen}
+                            isOpen={openMenuLabel === item.label}
+                            onToggle={() => handleToggleMenu(item.label)}
+                        />
                     ) : (
                         <NavLink
                             key={item.path}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../context/AuthContext'; // 👈 Make sure you import 'api'
 import { GraduationCap, User, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import logo from '../assets/unilogo.png'
 
 const StudentLogin = () => {
     const [rollNo, setRollNo] = useState('');
@@ -36,8 +37,8 @@ const StudentLogin = () => {
         <div className="min-h-screen flex items-center justify-center bg-blue-50 p-4">
             <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-blue-100">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-                        <GraduationCap className="w-8 h-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-32 h-32">
+                        <img src={logo} height="200px" width="200px" />
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900">Student Portal</h2>
                     <p className="text-sm text-slate-500">Sign in with your Roll Number.</p>

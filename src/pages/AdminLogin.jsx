@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'; // 👈 Added Loader2
+import { GraduationCap, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import logo from '../assets/unilogo.png'
 
 const AdminLogin = () => {
     const [email, setEmail] = useState('');
@@ -20,11 +21,15 @@ const AdminLogin = () => {
 
         try {
             const userData = await login(email, password);
+            console.log('[ADMIN LOGIN] userData:', userData);   // 👈 debug; remove later
 
             let redirectPath = '/';
 
-            if (userData.role === 'department_admin') {
-                const deptCode = userData.departmentCode || userData.department?.code;
+            // Route by role first, department second
+            if (userData.role === 'finance_admin') {
+                redirectPath = '/finance/dashboard';
+            } else if (userData.role === 'department_admin') {
+                const deptCode = (userData.departmentCode || userData.department?.code || '').toUpperCase().trim();
                 if (deptCode === 'ADM') redirectPath = '/admissions/dashboard';
                 else if (deptCode === 'FIN') redirectPath = '/finance/dashboard';
                 else if (deptCode === 'EXM') redirectPath = '/examination/dashboard';
@@ -32,18 +37,18 @@ const AdminLogin = () => {
             } else {
                 const redirectMap = {
                     superadmin: '/superadmin/dashboard',
+                    systemadmin: '/systemadmin/dashboard',
                     teacher: '/teacher/dashboard',
                     student: '/student/dashboard',
-                    systemadmin: '/systemadmin/dashboard',
                 };
                 redirectPath = redirectMap[userData.role] || '/';
             }
 
-            // 👇 FORCE HARD RELOAD
-            window.location.href = redirectPath;
-
+            // 👇 Use SPA navigation instead of hard reload
+            navigate(redirectPath, { replace: true });
         } catch (err) {
-            setError(err.message);
+            console.error('[ADMIN LOGIN] error:', err);
+            setError(err.message || 'Login failed.');
             setIsLoading(false);
         }
     };
@@ -52,8 +57,8 @@ const AdminLogin = () => {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
             <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg">
-                        <GraduationCap className="w-8 h-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-32 h-32">
+                        <img src={logo} height="200px" width="200px" />
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900">Admin Portal</h2>
                     <p className="text-sm text-slate-500">Sign in to manage the university.</p>
