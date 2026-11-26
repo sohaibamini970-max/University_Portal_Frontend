@@ -5,7 +5,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const api = axios.create({
-    baseURL: 'https://localhost:7084/api',
+    baseURL: 'https://universityportalbackend-ozzm20844-internee1.vercel.app/api',
     headers: { 'Content-Type': 'application/json' },
 });
 
